@@ -1,6 +1,6 @@
 package io.github.cichlidmc.cichlid.api.mod.entrypoint;
 
-import io.github.cichlidmc.cichlid.api.Mod;
+import io.github.cichlidmc.cichlid.api.loaded.Mod;
 
 /**
  * An exception thrown during entrypoint invocation.

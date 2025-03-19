@@ -36,12 +36,12 @@ tasks.named<Test>("test") {
 
 tasks.named("processResources", ProcessResources::class) {
     val properties = mapOf(
-        "version" to version
+        "version" to version.toString()
     )
 
-    properties.forEach(inputs::property)
+    inputs.properties(properties)
 
-    filesMatching("cichlid.json") {
+    filesMatching("cichlid_version.txt") {
         expand(properties)
     }
 }

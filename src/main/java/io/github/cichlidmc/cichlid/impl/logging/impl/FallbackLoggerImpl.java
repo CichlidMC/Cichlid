@@ -1,19 +1,18 @@
 package io.github.cichlidmc.cichlid.impl.logging.impl;
 
-import java.io.ByteArrayOutputStream;
+import io.github.cichlidmc.cichlid.api.CichlidPaths;
+import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
+import io.github.cichlidmc.cichlid.impl.util.Utils;
+
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import io.github.cichlidmc.cichlid.impl.CichlidPaths;
-import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
-
 public class FallbackLoggerImpl implements CichlidLogger {
-	private static final Path file = CichlidPaths.ROOT.resolve("log.txt");
+	private static final Path file = CichlidPaths.CICHLID_ROOT.resolve("log.txt");
 	private static final String format = "[%s] [%s] [%s] [%s]: %s";
 	private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
 
@@ -21,6 +20,7 @@ public class FallbackLoggerImpl implements CichlidLogger {
 		try {
 			// reset log on init
 			Files.deleteIfExists(file);
+			Files.createDirectories(file.getParent());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -30,6 +30,11 @@ public class FallbackLoggerImpl implements CichlidLogger {
 
 	public FallbackLoggerImpl(String name) {
 		this.name = name;
+	}
+
+	@Override
+	public void space() {
+		this.writeRaw("");
 	}
 
 	@Override
@@ -49,10 +54,7 @@ public class FallbackLoggerImpl implements CichlidLogger {
 
 	@Override
 	public void throwable(Throwable t) {
-		ByteArrayOutputStream data = new ByteArrayOutputStream();
-		PrintStream stream = new PrintStream(data);
-		t.printStackTrace(stream);
-		String string = data.toString();
+		String string = Utils.getStackTrace(t);
 		for (String line : string.split(System.lineSeparator())) {
 			this.error(line);
 		}
@@ -62,9 +64,13 @@ public class FallbackLoggerImpl implements CichlidLogger {
 		String time = timeFormat.format(new Date());
 		String thread = Thread.currentThread().getName();
 		String formatted = String.format(format, time, thread, this.name, level, message);
-		System.out.println(formatted);
+		this.writeRaw(formatted);
+	}
+
+	private void writeRaw(String string) {
+		System.out.println(string);
 		try {
-			byte[] bytes = (formatted + '\n').getBytes();
+			byte[] bytes = (string + '\n').getBytes();
 			Files.write(file, bytes, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 		} catch (IOException e) {
 			throw new RuntimeException(e);

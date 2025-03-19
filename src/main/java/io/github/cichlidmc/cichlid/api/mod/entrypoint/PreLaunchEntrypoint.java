@@ -1,6 +1,6 @@
 package io.github.cichlidmc.cichlid.api.mod.entrypoint;
 
-import io.github.cichlidmc.cichlid.api.Mod;
+import io.github.cichlidmc.cichlid.api.loaded.Mod;
 
 /**
  * Invoked during Cichlid initialization, before the primary application has started.

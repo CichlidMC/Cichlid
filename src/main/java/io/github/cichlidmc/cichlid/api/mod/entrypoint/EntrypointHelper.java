@@ -1,19 +1,22 @@
 package io.github.cichlidmc.cichlid.api.mod.entrypoint;
 
+import io.github.cichlidmc.cichlid.api.Cichlid;
+import io.github.cichlidmc.cichlid.api.loaded.Mod;
+
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import io.github.cichlidmc.cichlid.api.mod.CichlidLoader;
-import io.github.cichlidmc.cichlid.api.Mod;
-
+/**
+ * Utilities for invoking class-style entrypoints.
+ */
 public class EntrypointHelper {
 	/**
 	 * Invoke the given entrypoint on all mods.
 	 * <br>
-	 * The entrypoint will be queried on all mods, and if present, the class will
-	 * be created from a public no-arg constructor.
+	 * The entrypoint will be queried on all mods, and if present, the value will be considered a class name.
+	 * The class will be looked up and then instantiated from a public no-arg constructor.
 	 * It will be cast to the given class, and the given consumer will be invoked.
 	 * <br>
 	 * Each time the consumer is invoked, it will be wrapped in a try-catch, and any
@@ -38,8 +41,8 @@ public class EntrypointHelper {
 	 */
 	public static <T> void invokeSafe(Class<T> clazz, String key, BiConsumer<T, Mod> consumer,
 									  Consumer<EntrypointException> errorConsumer) {
-		List<Mod> list = CichlidLoader.mods().stream()
-				.filter(mod -> mod.metadata().entrypoints().has(key))
+		List<Mod> list = Cichlid.mods().stream()
+				.filter(mod -> mod.metadata().entrypoints().contains(key))
 				.collect(Collectors.toList());
 
 		if (list.isEmpty())

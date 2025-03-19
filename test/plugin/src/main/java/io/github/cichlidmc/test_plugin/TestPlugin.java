@@ -1,9 +1,9 @@
 package io.github.cichlidmc.test_plugin;
 
-import java.nio.file.Path;
-
 import io.github.cichlidmc.cichlid.api.plugin.CichlidPlugin;
-import io.github.cichlidmc.cichlid.api.plugin.LoadableMod;
+import io.github.cichlidmc.cichlid.api.plugin.mod.LoadableMod;
+
+import java.nio.file.Path;
 
 public class TestPlugin implements CichlidPlugin {
 	@Override

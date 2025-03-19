@@ -1,22 +1,48 @@
 package io.github.cichlidmc.cichlid.impl;
 
+import io.github.cichlidmc.cichlid.api.CichlidPaths;
+import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
+import io.github.cichlidmc.cichlid.impl.report.ProblemReport;
+import io.github.cichlidmc.cichlid.impl.report.ProblemReportTextRenderer;
+import io.github.cichlidmc.cichlid.impl.report.ReportDetail;
+import io.github.cichlidmc.cichlid.impl.report.ReportSection;
+import io.github.cichlidmc.cichlid.impl.report.ReportedException;
+import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformerManager;
+import io.github.cichlidmc.cichlid.impl.util.Utils;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 
-import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
-
 public class CichlidAgent {
-	public static void premain(String args, Instrumentation instrumentation) {
+	private static final Path catastropheLog = CichlidPaths.CICHLID_ROOT.resolve("catastrophe.txt");
+
+	private static final List<Path> importantDirectories = Utils.listOf(
+			CichlidPaths.MODS, CichlidPaths.CONFIGS, CichlidPaths.PLUGINS
+	);
+
+	private static final List<Class<?>> criticalClasses = Utils.listOf(
+			CichlidLogger.class, CichlidTransformerManager.class, CatastropheLogger.class,
+			ProblemReport.class, ReportSection.class, ReportDetail.class, ReportedException.class
+	);
+
+	public static void premain(@Nullable String args, Instrumentation instrumentation) {
 		try {
-			CichlidLoaderImpl.load(instrumentation);
+			setupFiles();
+			preloadCriticalClasses();
+			CichlidImpl.load(args, instrumentation);
 		} catch (Throwable t) {
+			// in case of a rogue transformer breaking everything, stop transforming classes
+			CichlidTransformerManager.emergencyStop();
+
 			try {
 				handleError(t);
 			} catch (Throwable t2) {
@@ -31,21 +57,38 @@ public class CichlidAgent {
 	}
 
 	private static void handleError(Throwable t) {
-		// TODO: GUI
 		CichlidLogger logger = CichlidLogger.get("Cichlid");
-		logger.error("Something went wrong while loading Cichlid!");
-		logger.throwable(t);
+		ProblemReport report = ProblemReport.of(t);
+		logger.error("One or more errors occurred while loading Cichlid.");
+		logger.info(ProblemReportTextRenderer.render(report));
+		// TODO: GUI
 	}
 
 	private static void handleCatastrophe(Throwable t) {
 		CatastropheLogger logger = new CatastropheLogger(t::addSuppressed);
 
 		logger.println("Something went *very* wrong while loading Cichlid!");
-		logger.println("Please report this at https://github.com/CichlidMC/CichlidLoader/issues");
+		logger.println("Please report this at https://github.com/CichlidMC/Cichlid/issues");
 		logger.printThrowable(t);
 	}
 
-	private static class CatastropheLogger {
+	private static void setupFiles() throws IOException {
+		Files.deleteIfExists(catastropheLog);
+		for (Path directory : importantDirectories) {
+			Files.createDirectories(directory);
+		}
+	}
+
+	private static void preloadCriticalClasses() {
+		criticalClasses.forEach(CichlidAgent::preload);
+	}
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private static void preload(Class<?> clazz) {
+		clazz.getDeclaredMethods();
+	}
+
+	private static final class CatastropheLogger {
 		private final PrintStream console;
 		private final PrintStream log;
 
@@ -66,12 +109,10 @@ public class CichlidAgent {
 
 		private static OutputStream getLogOutputStream(Consumer<Throwable> suppressedErrors) {
 			try {
-				Path file = CichlidPaths.ROOT.resolve("catastrophe.txt");
-				Files.deleteIfExists(file);
-				return Files.newOutputStream(file, StandardOpenOption.CREATE);
+				return Files.newOutputStream(catastropheLog, StandardOpenOption.CREATE);
 			} catch (Throwable t) {
 				suppressedErrors.accept(t);
-				// oh well, send to the void
+				// welp. to the shredder
 				return new ByteArrayOutputStream();
 			}
 		}

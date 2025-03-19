@@ -1,10 +1,10 @@
 package io.github.cichlidmc.cichlid.impl.logging;
 
-import java.util.function.Function;
-
-import io.github.cichlidmc.cichlid.impl.logging.impl.Log4jLoggerImpl;
 import io.github.cichlidmc.cichlid.impl.logging.impl.FallbackLoggerImpl;
+import io.github.cichlidmc.cichlid.impl.logging.impl.Log4jLoggerImpl;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
+
+import java.util.function.Function;
 
 public interface CichlidLogger {
 	Function<String, CichlidLogger> FACTORY = Utils.make(() -> {
@@ -18,6 +18,7 @@ public interface CichlidLogger {
 		}
 	});
 
+	void space();
 	void info(String message);
 	void warn(String message);
 	void error(String message);

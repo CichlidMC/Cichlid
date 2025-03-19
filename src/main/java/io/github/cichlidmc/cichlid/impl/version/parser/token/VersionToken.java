@@ -10,7 +10,7 @@ public class VersionToken implements Token {
 	}
 
 	public VersionToken(String version) {
-		this(Version.parse(version));
+		this(Version.of(version));
 	}
 
 	@Override

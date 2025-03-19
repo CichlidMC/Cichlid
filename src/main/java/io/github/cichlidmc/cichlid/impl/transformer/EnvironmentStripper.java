@@ -1,11 +1,10 @@
 package io.github.cichlidmc.cichlid.impl.transformer;
 
-import io.github.cichlidmc.cichlid.api.mod.CichlidLoader;
-import io.github.cichlidmc.cichlid.api.mod.env.ClientOnly;
-import io.github.cichlidmc.cichlid.api.mod.env.DedicatedServerOnly;
-import io.github.cichlidmc.cichlid.api.mod.env.EnvOnly;
-import io.github.cichlidmc.cichlid.api.mod.env.Environments;
-import io.github.cichlidmc.cichlid.api.mod.transformer.CichlidTransformer;
+import io.github.cichlidmc.cichlid.api.Cichlid;
+import io.github.cichlidmc.cichlid.api.dist.ClientOnly;
+import io.github.cichlidmc.cichlid.api.dist.DedicatedServerOnly;
+import io.github.cichlidmc.cichlid.api.dist.Distribution;
+import io.github.cichlidmc.cichlid.api.transformer.CichlidTransformer;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -14,45 +13,44 @@ import org.objectweb.asm.tree.ClassNode;
 import java.util.List;
 import java.util.function.Function;
 
-public class EnvironmentStripper implements CichlidTransformer {
-	public static final String ENV_ONLY_DESC = Type.getDescriptor(EnvOnly.class);
+public enum EnvironmentStripper implements CichlidTransformer {
+	INSTANCE;
+
 	public static final String CLIENT_ONLY_DESC = Type.getDescriptor(ClientOnly.class);
 	public static final String SERVER_ONLY_DESC = Type.getDescriptor(DedicatedServerOnly.class);
 
-	private static final String env = CichlidLoader.environment();
+	private static final Distribution dist = Cichlid.distribution();
 
 	@Override
-	public void transform(ClassNode node) {
-		filter(node.fields, field -> field.visibleAnnotations);
-		filter(node.methods, method -> method.visibleAnnotations);
+	public boolean transform(ClassNode node) {
+		Distribution classEnv = extractEnvironment(node.visibleAnnotations);
+		if (classEnv != null && classEnv != dist) {
+			throw new IllegalStateException("Cannot load class exclusive to '" + classEnv + "' in current environment: " + dist);
+		}
+
+		boolean filtered = false;
+		filtered |= filter(node.fields, field -> field.visibleAnnotations);
+		filtered |= filter(node.methods, method -> method.visibleAnnotations);
+		return filtered;
 	}
 
-	private static <T> void filter(List<T> list, Function<T, @Nullable List<AnnotationNode>> function) {
-		list.removeIf(member -> {
+	private static <T> boolean filter(List<T> list, Function<T, @Nullable List<AnnotationNode>> function) {
+		return list.removeIf(member -> {
 			List<AnnotationNode> annotations = function.apply(member);
-			String environment = extractEnvironment(annotations);
-			return environment != null && !environment.equals(env);
+			Distribution dist = extractEnvironment(annotations);
+			return dist != null && dist != EnvironmentStripper.dist;
 		});
 	}
 
-	private static String extractEnvironment(@Nullable List<AnnotationNode> annotations) {
+	private static Distribution extractEnvironment(@Nullable List<AnnotationNode> annotations) {
 		if (annotations == null || annotations.isEmpty())
 			return null;
 
 		for (AnnotationNode annotation : annotations) {
 			if (CLIENT_ONLY_DESC.equals(annotation.desc)) {
-				return Environments.CLIENT;
+				return Distribution.CLIENT;
 			} else if (SERVER_ONLY_DESC.equals(annotation.desc)) {
-				return Environments.DEDICATED_SERVER;
-			} else if (ENV_ONLY_DESC.equals(annotation.desc)) {
-				// [0] should be "value", the field name
-				// [1] should be the actual value, a string
-				Object value = annotation.values.get(1);
-				if (value instanceof String) {
-					return (String) value;
-				} else {
-					throw new IllegalStateException("Expected string value for EnvOnly annotation, got " + value);
-				}
+				return Distribution.DEDICATED_SERVER;
 			}
 		}
 

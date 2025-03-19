@@ -1,7 +1,6 @@
 package io.github.cichlidmc.cichlid.test;
 
-import java.util.List;
-
+import io.github.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
 import io.github.cichlidmc.cichlid.impl.version.parser.VersionPredicateTokenizer;
 import io.github.cichlidmc.cichlid.impl.version.parser.token.BooleanOperatorToken;
@@ -11,6 +10,8 @@ import io.github.cichlidmc.cichlid.impl.version.parser.token.VersionOperatorToke
 import io.github.cichlidmc.cichlid.impl.version.parser.token.VersionToken;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 public class VersionPredicateTokenizerTests {
 	@Test
@@ -102,6 +103,6 @@ public class VersionPredicateTokenizerTests {
 
 	@Test
 	public void testUnknownOperator() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> VersionPredicateTokenizer.tokenize("%1.5"));
+		Assertions.assertThrows(VersionPredicateSyntaxException.class, () -> VersionPredicateTokenizer.tokenize("%1.5"));
 	}
 }

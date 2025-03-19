@@ -12,6 +12,11 @@ public class Log4jLoggerImpl implements CichlidLogger {
 	}
 
 	@Override
+	public void space() {
+		this.logger.info("");
+	}
+
+	@Override
 	public void info(String message) {
 		this.logger.info(message);
 	}

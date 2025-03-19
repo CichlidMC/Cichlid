@@ -21,34 +21,21 @@ dependencies {
     mod(implementation(project(":test-mod"))!!)
 }
 
-tasks.register("setupAgents", Copy::class) {
-    from(agent)
-    into("run/agents")
-}
-
-tasks.register("setupPlugins", Copy::class) {
-    from(plugin)
-    into("run/cichlid/plugins")
-}
-
-tasks.register("setupMods", Copy::class) {
-    from(mod)
-    into("run/cichlid/mods")
+application {
+    mainClass = "io.github.cichlidmc.test_app.Main"
 }
 
 tasks.named("run", JavaExec::class) {
-    // depend on 3 setup tasks
-    dependsOn("setupAgents", "setupPlugins", "setupMods")
+    jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
 
-    // add agents to jvm args
     agent.files.forEach {
-        val arg = "-javaagent:agents/${it.name}"
+        val arg = "-javaagent:$it=dist=client,version=1.21.4"
         jvmArgs(arg)
     }
 
     workingDir = file("run")
-}
 
-application {
-    mainClass = "io.github.cichlidmc.test_app.Main"
+    doFirst {
+        workingDir.mkdirs()
+    }
 }

@@ -1,25 +1,36 @@
 package io.github.cichlidmc.cichlid.api.version;
 
-import java.util.function.Predicate;
-
 import io.github.cichlidmc.cichlid.impl.version.parser.VersionPredicateParser;
+
+import java.util.function.Predicate;
 
 /**
  * A predicate for {@link Version}s.
  */
 public interface VersionPredicate extends Predicate<Version> {
+	/**
+	 * Shortcut that parses a String into a Version for you.
+	 */
 	default boolean test(String version) {
-		return this.test(Version.parse(version));
+		return this.test(Version.of(version));
 	}
+
+	/**
+	 * Version predicates parsed from {@link #parse(String)} will return their original string.
+	 * Other implementations have no such guarantee.
+	 */
+	@Override
+	String toString();
 
 	/**
 	 * Parse a version predicate from the given string. Syntax is as follows:
 	 * <ul>
 	 *     <li>Version operators: {@code <=, >=, ==, !=, <, >}</li>
-	 *     <li>Boolean operators: {@code &&, ||}, same precedence as Java</li>
+	 *     <li>Boolean operators: {@code &&, ||}, same precedence as Java (and, then or)</li>
 	 *     <li>Parentheses: May be used to explicitly group boolean operations</li>
 	 *     <li>Versions: Any string after a version operator until parentheses or a boolean op are hit.</li>
 	 *     <li>Whitespace: All whitespace is ignored.</li>
+	 *     <li>Special case: the string "any" will parse into a predicate matching any version.</li>
 	 * </ul>
 	 * Examples:
 	 * <ul>

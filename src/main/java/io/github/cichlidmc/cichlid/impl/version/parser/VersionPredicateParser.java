@@ -1,26 +1,29 @@
 package io.github.cichlidmc.cichlid.impl.version.parser;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import io.github.cichlidmc.cichlid.api.version.VersionPredicate;
 import io.github.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import io.github.cichlidmc.cichlid.impl.util.Either;
 import io.github.cichlidmc.cichlid.impl.util.IntRange;
+import io.github.cichlidmc.cichlid.impl.util.Utils;
+import io.github.cichlidmc.cichlid.impl.version.parser.impl.AlwaysTrueVersionPredicate;
+import io.github.cichlidmc.cichlid.impl.version.parser.impl.ParsedVersionPredicate;
 import io.github.cichlidmc.cichlid.impl.version.parser.token.BooleanOperatorToken;
 import io.github.cichlidmc.cichlid.impl.version.parser.token.ParenthesisToken;
 import io.github.cichlidmc.cichlid.impl.version.parser.token.Token;
 import io.github.cichlidmc.cichlid.impl.version.parser.token.VersionOperatorToken;
 import io.github.cichlidmc.cichlid.impl.version.parser.token.VersionToken;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 public class VersionPredicateParser {
 	public static VersionPredicate parse(String string) {
 		string = string.trim();
 
-		if (string.equals("*")) {
-			return version -> true;
+		if (string.equals("any")) {
+			return AlwaysTrueVersionPredicate.INSTANCE;
 		} else if (string.isEmpty()) {
 			throw new VersionPredicateSyntaxException("Version predicate cannot be empty");
 		}
@@ -61,7 +64,7 @@ public class VersionPredicateParser {
 			throw new RuntimeException("Something has gone very wrong");
 		}
 
-		return ored.get(0).left();
+		return new ParsedVersionPredicate(ored.get(0).left(), string);
 	}
 
 	private static List<Either<VersionPredicate, Token>> simplifyParentheses(List<Either<VersionPredicate, Token>> tokens, String string) {
@@ -176,7 +179,7 @@ public class VersionPredicateParser {
 
 	private static VersionPredicate matchSimplePattern(List<Either<VersionPredicate, Token>> tokens, int i) {
 		Either<VersionPredicate, Token> either = tokens.get(i);
-		Either<VersionPredicate, Token> next = (i + 1 == tokens.size()) ? null : tokens.get(i + 1);
+		Either<VersionPredicate, Token> next = Utils.nextOrNull(tokens, i);
 		if (either.isRight() && either.right() instanceof VersionOperatorToken && next != null && next.isRight() && next.right() instanceof VersionToken) {
 			VersionOperatorToken operator = (VersionOperatorToken) either.right();
 			VersionToken version = (VersionToken) next.right();
