@@ -1,11 +1,12 @@
 package io.github.cichlidmc.cichlid.test;
 
-import static io.github.cichlidmc.cichlid.test.MoreAssertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.cichlidmc.cichlid.api.version.VersionPredicate;
 import io.github.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import org.junit.jupiter.api.Test;
+
+import static io.github.cichlidmc.cichlid.test.MoreAssertions.assertThrowsWithMessage;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class VersionPredicateTests {
 	@Test
@@ -81,7 +82,7 @@ public class VersionPredicateTests {
 
 	@Test
 	public void testAny() {
-		VersionPredicate predicate = VersionPredicate.parse("* ");
+		VersionPredicate predicate = VersionPredicate.parse("any ");
 		assertTrue(predicate.test("1.12"));
 		assertTrue(predicate.test("1.9.4"));
 		assertTrue(predicate.test("1.3.1.2-build.5"));
