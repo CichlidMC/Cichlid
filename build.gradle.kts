@@ -6,7 +6,7 @@ plugins {
 
 base.archivesName = "Cichlid"
 group = "io.github.cichlidmc"
-version = properties["version"]!!
+version = "0.2.0"
 
 allprojects {
     repositories {

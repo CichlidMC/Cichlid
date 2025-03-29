@@ -17,8 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * So the JVM *really* insists on loading classes given to transformers. Exceptions are silently ignored,
- * and even replacing the class with an empty byte array doesn't crash it.
+ * So the JVM *really* insists on loading classes given to transformers.
+ * Exceptions are silently ignored, and even replacing the class with an empty byte array doesn't crash it.
  * Solution: poison the class by injecting an exception into static init.
  */
 public final class ClassPoisoner {
