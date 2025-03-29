@@ -7,7 +7,8 @@ import io.github.cichlidmc.cichlid.impl.report.ProblemReportTextRenderer;
 import io.github.cichlidmc.cichlid.impl.report.ReportDetail;
 import io.github.cichlidmc.cichlid.impl.report.ReportSection;
 import io.github.cichlidmc.cichlid.impl.report.ReportedException;
-import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformerManager;
+import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
+import io.github.cichlidmc.cichlid.impl.transformer.ClassPoisoner;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,7 @@ public class CichlidAgent {
 	);
 
 	private static final List<Class<?>> criticalClasses = Utils.listOf(
-			CichlidLogger.class, CichlidTransformerManager.class, CatastropheLogger.class,
+			CichlidLogger.class, CichlidTransformer.class, CatastropheLogger.class, ClassPoisoner.class,
 			ProblemReport.class, ReportSection.class, ReportDetail.class, ReportedException.class
 	);
 
@@ -41,7 +42,7 @@ public class CichlidAgent {
 			CichlidImpl.load(args, instrumentation);
 		} catch (Throwable t) {
 			// in case of a rogue transformer breaking everything, stop transforming classes
-			CichlidTransformerManager.emergencyStop();
+			CichlidTransformer.emergencyStop();
 
 			try {
 				handleError(t);

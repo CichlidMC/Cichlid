@@ -1,10 +1,12 @@
 package io.github.cichlidmc.cichlid.impl;
 
+import io.github.cichlidmc.cichlid.api.CichlidPaths;
 import io.github.cichlidmc.cichlid.api.dist.Distribution;
 import io.github.cichlidmc.cichlid.api.loaded.LoadedSet;
 import io.github.cichlidmc.cichlid.api.loaded.Mod;
 import io.github.cichlidmc.cichlid.api.loaded.Plugin;
 import io.github.cichlidmc.cichlid.api.metadata.Metadata;
+import io.github.cichlidmc.cichlid.api.mod.entrypoint.EarlySetupEntrypoint;
 import io.github.cichlidmc.cichlid.api.mod.entrypoint.EntrypointHelper;
 import io.github.cichlidmc.cichlid.api.mod.entrypoint.PreLaunchEntrypoint;
 import io.github.cichlidmc.cichlid.api.version.Version;
@@ -12,9 +14,13 @@ import io.github.cichlidmc.cichlid.impl.loading.mod.ModLoader;
 import io.github.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import io.github.cichlidmc.cichlid.impl.loading.plugin.PluginLoader;
 import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
-import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformerManager;
-import io.github.cichlidmc.cichlid.impl.transformer.EnvironmentStripper;
+import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
+import io.github.cichlidmc.cichlid.impl.util.FileUtils;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
+import io.github.cichlidmc.sushi.api.TransformerManager;
+import io.github.cichlidmc.sushi.api.util.Id;
+import io.github.cichlidmc.tinyjson.TinyJson;
+import io.github.cichlidmc.tinyjson.value.JsonValue;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -22,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.instrument.Instrumentation;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -60,7 +68,7 @@ public class CichlidImpl {
 	}
 
 	public static void load(@Nullable String args, Instrumentation instrumentation) {
-		if (initialized) {
+		if (isInitialized()) {
 			throw new IllegalStateException("Cichlid is already loaded!");
 		}
 
@@ -78,15 +86,15 @@ public class CichlidImpl {
 		logger.space();
 
 		// register transformer now so it can catch early classloading
-		instrumentation.addTransformer(CichlidTransformerManager.INSTANCE);
-		CichlidTransformerManager.registerTransformer(EnvironmentStripper.INSTANCE);
+		CichlidTransformer transformer = new CichlidTransformer();
+		instrumentation.addTransformer(transformer);
 
 		logger.info("Loading plugins...");
 		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load(instrumentation);
 		plugins = PluginLoader.toLoadedSet(loadedPlugins);
 		logLoadedSet(plugins(), "plugin", Plugin::metadata);
 
-		loadedPlugins.values().forEach(plugin -> plugin.impl.beforeModsLoad());
+		loadedPlugins.values().forEach(plugin -> plugin.impl.init());
 
 		logger.space();
 
@@ -96,16 +104,60 @@ public class CichlidImpl {
 
 		loadedPlugins.values().forEach(plugin -> plugin.impl.afterModsLoaded());
 
+		EntrypointHelper.invoke(EarlySetupEntrypoint.class, EarlySetupEntrypoint.KEY, EarlySetupEntrypoint::earlySetup, true);
+
+		try {
+			transformer.init(loadSushiTransformers());
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to setup Sushi", e);
+		}
+
 		initialized = true;
 		logger.info("Cichlid initialized!");
 
 		logger.space();
 
-		logger.info("Invoking pre-launch...");
-		EntrypointHelper.invoke(PreLaunchEntrypoint.class, PreLaunchEntrypoint.KEY, PreLaunchEntrypoint::preLaunch);
-		logger.info("Pre-launch done. Continuing to Minecraft...");
+		EntrypointHelper.invoke(PreLaunchEntrypoint.class, PreLaunchEntrypoint.KEY, PreLaunchEntrypoint::preLaunch, true);
 
+		logger.info("Continuing to Minecraft...");
 		logger.space();
+	}
+
+	private static TransformerManager loadSushiTransformers() throws IOException {
+		Path output = CichlidPaths.CICHLID_ROOT.resolve(".sushi").resolve("output");
+		FileUtils.deleteRecursively(output);
+		Files.createDirectories(output);
+
+		TransformerManager.Builder builder = TransformerManager.builder();
+		builder.output(output);
+
+		for (Mod mod : mods()) {
+			if (!mod.resources().isPresent())
+				continue;
+
+			Path transformers = mod.resources().get().resolve("transformers");
+			if (!Files.exists(transformers))
+				continue;
+
+			FileUtils.walkFiles(transformers, file -> {
+				String path = transformers.relativize(file).toString();
+				if (!path.endsWith(".sushi"))
+					return;
+
+				String withoutExtension = path.substring(0, path.length() - ".sushi".length());
+				try {
+					Id id = new Id(mod.metadata().id(), withoutExtension);
+					JsonValue json = TinyJson.parse(file);
+					builder.parseAndRegister(id, json).ifPresent(error -> {
+						throw new RuntimeException("Failed to register Sushi transformer " + id + ": " + error);
+					});
+				} catch (Id.InvalidException e) {
+					throw new RuntimeException("Sushi transformer in mod " + mod.metadata().blame() + " has an invalid name", e);
+				}
+			});
+		}
+
+		return builder.build();
 	}
 
 	private static <T> void logLoadedSet(LoadedSet<T> set, String type, Function<T, Metadata> metadata) {

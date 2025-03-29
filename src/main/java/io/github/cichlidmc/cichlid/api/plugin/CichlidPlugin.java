@@ -15,7 +15,7 @@ public interface CichlidPlugin {
 	 * Called after all plugins have been loaded, right before the mod loading process begins.
 	 * {@link Cichlid#plugins()} has been populated, and is now safe to query.
 	 */
-	default void beforeModsLoad() {
+	default void init() {
 	}
 
 	/**

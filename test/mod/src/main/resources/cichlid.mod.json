@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Test mod for Cichlid",
   "entrypoints": {
+    "early_setup": "io.github.cichlidmc.test_mod.TestEarlySetup",
     "pre_launch": "io.github.cichlidmc.test_mod.TestPreLaunch"
   }
 }
