@@ -6,6 +6,7 @@ import io.github.cichlidmc.cichlid.api.plugin.mod.LoadedMod;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,8 +23,12 @@ public final class ClasspathLoadableMod extends LoadableMod {
 	@Override
 	@SuppressWarnings("resource") // needs to stay open for access
 	public LoadedMod load() throws IOException {
-		// very annoyingly, Paths.get(uri) only works for currently open zip filesystems.
-		FileSystems.newFileSystem(this.metadataLocation, Collections.emptyMap());
+		try {
+			// Paths.get(uri) throws if the filesystem isn't open.
+			// but newFileSystem throws if the filesystem *is* open.
+			FileSystems.newFileSystem(this.metadataLocation, Collections.emptyMap());
+		} catch (FileSystemAlreadyExistsException ignored) {}
+
 		Path resourcesRoot = Paths.get(this.metadataLocation).getParent();
 		return LoadedMod.create(resourcesRoot);
 	}
