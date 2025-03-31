@@ -16,7 +16,7 @@ val plugin: Configuration by configurations.creating { isTransitive = false }
 val mod: Configuration by configurations.creating { isTransitive = false }
 
 dependencies {
-    agent(implementation(project(":", configuration = "fat"))!!)
+    agent(implementation(project(":", configuration = "shadow"))!!)
     plugin(implementation(project(":test-plugin"))!!)
     mod(implementation(project(":test-mod"))!!)
 }

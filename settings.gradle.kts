@@ -1,4 +1,4 @@
-rootProject.name = "CichlidLoader"
+rootProject.name = "cichlid"
 
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 

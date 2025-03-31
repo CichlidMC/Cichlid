@@ -1,12 +1,12 @@
 plugins {
-    id("com.gradleup.shadow") version "8.3.0"
+    id("com.gradleup.shadow") version "8.3.6"
     id("java-library")
     id("maven-publish")
 }
 
-base.archivesName = "Cichlid"
+base.archivesName = "cichlid"
 group = "io.github.cichlidmc"
-version = "0.2.0"
+version = "0.3.0"
 
 allprojects {
     repositories {
@@ -16,9 +16,7 @@ allprojects {
 }
 
 // configuration for shadowed dependencies
-val shade: Configuration by configurations.creating {
-    isTransitive = false
-}
+val shade: Configuration by configurations.creating
 
 dependencies {
     compileOnlyApi("org.jetbrains:annotations:24.1.0")
@@ -47,73 +45,86 @@ tasks.named("processResources", ProcessResources::class) {
     }
 }
 
+// dummy sourceSets for features. Contents are manged by jar task configuration below.
+val modApi: SourceSet by sourceSets.creating
+val pluginApi: SourceSet by sourceSets.creating
+
 java {
     withSourcesJar()
+
+    registerFeature("modApi") {
+        withSourcesJar()
+        usingSourceSet(modApi)
+    }
+
+    registerFeature("pluginApi") {
+        withSourcesJar()
+        usingSourceSet(pluginApi)
+    }
 }
 
-// jar: slim (no dependencies)
-// shadowJar: fat (all dependencies)
-// apiJar: api (slim without impls and plugin-api)
-// pluginApiJar: plugin-api (slim without impls and api)
+// jar: dependencies not bundled, for impl access and dev runtime
+// shadowJar: prod, dependencies bundled, for distribution
+// modApiJar: mod-api, for mods at compile time
+// pluginApiJar: plugin-api, for plugins at compile time
 
-tasks.named("jar", Jar::class).configure {
-    archiveClassifier = "slim"
+tasks.named<Jar>("jar") {
+    manifest.attributes["Premain-Class"] = "io.github.cichlidmc.cichlid.impl.CichlidAgent"
 }
 
-tasks.named("shadowJar", com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar::class) {
+tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+    archiveClassifier = "prod"
     configurations = listOf(shade)
-    archiveClassifier = ""
     manifest.attributes["Premain-Class"] = "io.github.cichlidmc.cichlid.impl.CichlidAgent"
 
     // exclude signatures and manifest of dependencies
     exclude("META-INF/**")
 }
 
-tasks.register<Jar>("apiJar") {
-    dependsOn(tasks.named("jar"))
-    archiveClassifier = "api"
+tasks.named<Jar>("modApiJar") {
+    dependsOn("jar")
+    archiveClassifier = "mod-api"
     from(zipTree(files(tasks.named("jar")).singleFile))
-    include("**/api/**")
-    exclude("**/api/plugin/**")
+    exclude("io/github/cichlidmc/cichlid/impl/**")
+    exclude("io/github/cichlidmc/cichlid/api/plugin/**")
     includeEmptyDirs = false
 }
 
-tasks.register<Jar>("pluginApiJar") {
-    dependsOn(tasks.named("jar"))
+tasks.named<Jar>("modApiSourcesJar") {
+    dependsOn("sourcesJar")
+    archiveClassifier = "mod-api-sources"
+    from(zipTree(files(tasks.named("sourcesJar")).singleFile))
+    exclude("io/github/cichlidmc/cichlid/impl/**")
+    exclude("io/github/cichlidmc/cichlid/api/plugin/**")
+    includeEmptyDirs = false
+}
+
+tasks.named<Jar>("pluginApiJar") {
+    dependsOn("jar")
     archiveClassifier = "plugin-api"
     from(zipTree(files(tasks.named("jar")).singleFile))
-    include("**/api/**")
-    exclude("**/api/mod/**")
+    exclude("io/github/cichlidmc/cichlid/impl/**")
+    exclude("io/github/cichlidmc/cichlid/api/mod/**")
+    includeEmptyDirs = false
+}
+
+tasks.named<Jar>("pluginApiSourcesJar") {
+    dependsOn("sourcesJar")
+    archiveClassifier = "plugin-api-sources"
+    from(zipTree(files(tasks.named("sourcesJar")).singleFile))
+    exclude("io/github/cichlidmc/cichlid/impl/**")
+    exclude("io/github/cichlidmc/cichlid/api/mod/**")
     includeEmptyDirs = false
 }
 
 tasks.named("assemble").configure {
-    dependsOn("shadowJar", "apiJar", "pluginApiJar")
-}
-
-// output configuration for fat jar
-val fat: Configuration by configurations.creating {
-    isCanBeConsumed = true
-}
-
-artifacts {
-    add("fat", tasks.named("shadowJar"))
+    dependsOn("shadowJar", "modApiJar", "pluginApiJar")
 }
 
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
-            // default is project name, use archive name instead
-            artifactId = base.archivesName.get()
-            // includes main and sources jars
             from(components["java"])
-
-            artifact(tasks.named("apiJar")) {
-                classifier = "api"
-            }
-            artifact(tasks.named("pluginApiJar")) {
-                classifier = "plugin-api"
-            }
         }
     }
 
