@@ -27,7 +27,10 @@ public final class ClasspathLoadableMod extends LoadableMod {
 			// Paths.get(uri) throws if the filesystem isn't open.
 			// but newFileSystem throws if the filesystem *is* open.
 			FileSystems.newFileSystem(this.metadataLocation, Collections.emptyMap());
-		} catch (FileSystemAlreadyExistsException ignored) {}
+		} catch (FileSystemAlreadyExistsException | IllegalArgumentException ignored) {
+			// catch IllegalArgumentException, since for some reason UnixFileSystem
+			// throws on newFileSystem for any path besides the root.
+		}
 
 		Path resourcesRoot = Paths.get(this.metadataLocation).getParent();
 		return LoadedMod.create(resourcesRoot);
