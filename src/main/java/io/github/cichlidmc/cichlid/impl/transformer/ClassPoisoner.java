@@ -29,7 +29,7 @@ public final class ClassPoisoner {
 	public static final String owner = Type.getInternalName(ClassPoisoner.class);
 	public static final String desc = Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(String.class));
 
-	public static byte[] poison(byte[] bytes, String name, Throwable t) {
+	public static byte[] poison(String name, byte[] bytes, Throwable t) {
 		logger.error("Something went wrong while transforming class " + name + "; injecting poison.");
 		logger.throwable(t);
 

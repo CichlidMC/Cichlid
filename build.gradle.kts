@@ -23,7 +23,10 @@ dependencies {
     shade(api("io.github.cichlidmc:TinyJson:1.0.1")!!)
     shade(api("io.github.cichlidmc:Sushi:0.1.0")!!)
     shade(api("org.ow2.asm:asm-tree:9.7")!!)
+
     compileOnly("org.apache.logging.log4j:log4j-api:2.23.1")
+    shade(implementation("net.neoforged:AutoRenamingTool:2.0.3")!!)
+    shade(implementation("org.ow2.asm:asm-commons:9.7")!!)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
@@ -79,6 +82,8 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
 
     // exclude signatures and manifest of dependencies
     exclude("META-INF/**")
+
+    relocate("net.neoforged", "io.github.cichlidmc.cichlid.shadow.net.neoforged")
 }
 
 tasks.named<Jar>("modApiJar") {
@@ -119,6 +124,16 @@ tasks.named<Jar>("pluginApiSourcesJar") {
 
 tasks.named("assemble").configure {
     dependsOn("shadowJar", "modApiJar", "pluginApiJar")
+}
+
+tasks.register("buildProd") {
+    dependsOn("shadowJar")
+    val source = files(tasks.named("shadowJar")).singleFile
+    val dest = file("/home/tropheusj/.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/instances/cichlid testing/minecraft/cichlid/.meta/cichlid.jar")
+
+    doFirst {
+        source.copyTo(dest, overwrite = true)
+    }
 }
 
 publishing {

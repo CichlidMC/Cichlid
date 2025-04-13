@@ -15,12 +15,14 @@ import io.github.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import io.github.cichlidmc.cichlid.impl.loading.plugin.PluginLoader;
 import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
 import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
+import io.github.cichlidmc.cichlid.impl.transformer.remap.MinecraftRemapper;
 import io.github.cichlidmc.cichlid.impl.util.FileUtils;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
 import io.github.cichlidmc.sushi.api.TransformerManager;
 import io.github.cichlidmc.sushi.api.util.Id;
 import io.github.cichlidmc.tinyjson.TinyJson;
 import io.github.cichlidmc.tinyjson.value.JsonValue;
+import net.neoforged.srgutils.IMappingFile;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -67,7 +69,7 @@ public class CichlidImpl {
 		return Utils.getOrThrow(mods, "Mods are not loaded yet");
 	}
 
-	public static void load(@Nullable String args, Instrumentation instrumentation) {
+	public static void load(@Nullable String stringArgs, Instrumentation instrumentation) {
 		if (isInitialized()) {
 			throw new IllegalStateException("Cichlid is already loaded!");
 		}
@@ -79,15 +81,27 @@ public class CichlidImpl {
 		logger.space();
 
 		logger.info("Parsing arguments...");
-		parseArguments(args);
+
+		CichlidArgs args = parseArguments(stringArgs);
+		mcVersion = Version.of(args.version);
+		dist = args.dist;
+
 		logger.info("Minecraft version: " + mcVersion());
 		logger.info("Distribution: " + distribution());
 
 		logger.space();
 
 		// register transformer now so it can catch early classloading
-		CichlidTransformer transformer = new CichlidTransformer();
-		instrumentation.addTransformer(transformer);
+		CichlidTransformer transformer = CichlidTransformer.setup(instrumentation);
+
+		try {
+			// make sure this class is loaded early
+			Class.forName("net.neoforged.art.internal.EnhancedRemapper", false, CichlidImpl.class.getClassLoader());
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+
+		transformer.setRemapper(getRemapper(args.reverseMappings));
 
 		logger.info("Loading plugins...");
 		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load(instrumentation);
@@ -107,7 +121,7 @@ public class CichlidImpl {
 		EntrypointHelper.invoke(EarlySetupEntrypoint.class, EarlySetupEntrypoint.KEY, EarlySetupEntrypoint::earlySetup, true);
 
 		try {
-			transformer.init(loadSushiTransformers());
+			transformer.setTransformerManager(loadSushiTransformers());
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to setup Sushi", e);
 		}
@@ -121,6 +135,26 @@ public class CichlidImpl {
 
 		logger.info("Continuing to Minecraft...");
 		logger.space();
+	}
+
+	@Nullable
+	private static MinecraftRemapper getRemapper(boolean reverse) {
+		Path file = CichlidPaths.CICHLID_ROOT.resolve(".meta").resolve("mappings.txt");
+		if (!Files.exists(file)) {
+			logger.info("No mappings found, proceeding without them");
+			return null;
+		}
+
+		try {
+			logger.info("Loading mappings...");
+			long start = System.currentTimeMillis();
+			IMappingFile mappings = IMappingFile.load(file.toFile());
+			long seconds = (System.currentTimeMillis() - start) / 1000;
+			logger.info("Mappings successfully loaded in " + seconds + " second(s)");
+			return new MinecraftRemapper(reverse ? mappings.reverse() : mappings);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to read mappings", e);
+		}
 	}
 
 	private static TransformerManager loadSushiTransformers() throws IOException {
@@ -194,13 +228,12 @@ public class CichlidImpl {
 		}
 	}
 
-	private static void parseArguments(@Nullable String args) {
+	private static CichlidArgs parseArguments(@Nullable String args) {
 		CichlidArgs parsed = CichlidArgs.parse(args);
 		if (parsed == null) {
 			throw new RuntimeException("Cichlid is not installed properly! Invalid arguments: " + args);
 		}
 
-		mcVersion = Version.of(parsed.version);
-		dist = parsed.dist;
+		return parsed;
 	}
 }

@@ -4,7 +4,11 @@ import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.function.Function;
+
 public class Log4jLoggerImpl implements CichlidLogger {
+	public static final Function<String, CichlidLogger> FACTORY = Log4jLoggerImpl::new;
+
 	private final Logger logger;
 
 	public Log4jLoggerImpl(String name) {

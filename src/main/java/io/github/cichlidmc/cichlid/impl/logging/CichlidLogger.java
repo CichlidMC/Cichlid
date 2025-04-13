@@ -9,7 +9,7 @@ import java.util.function.Function;
 public interface CichlidLogger {
 	Function<String, CichlidLogger> FACTORY = Utils.make(() -> {
 		try {
-			new Log4jLoggerImpl("probe");
+			Class.forName("org.apache.logging.log4j.Logger");
 			return Log4jLoggerImpl::new;
 		} catch (Throwable t) {
 			FallbackLoggerImpl logger = new FallbackLoggerImpl(CichlidLogger.class.getSimpleName());

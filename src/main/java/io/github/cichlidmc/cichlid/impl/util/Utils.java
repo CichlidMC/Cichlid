@@ -3,6 +3,8 @@ package io.github.cichlidmc.cichlid.impl.util;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -95,5 +97,20 @@ public class Utils {
 			builder.append(s);
 		}
 		return builder.toString();
+	}
+
+	public static byte[] readAllBytes(InputStream stream) throws IOException {
+		try (ByteArrayOutputStream collector = new ByteArrayOutputStream()) {
+			byte[] buffer = new byte[1024];
+
+			while (true) {
+				int read = stream.read(buffer);
+				if (read == -1) {
+					return collector.toByteArray();
+				} else {
+					collector.write(buffer, 0, read);
+				}
+			}
+		}
 	}
 }

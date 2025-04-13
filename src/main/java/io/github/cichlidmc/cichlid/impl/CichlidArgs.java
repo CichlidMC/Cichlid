@@ -5,14 +5,17 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class CichlidArgs {
 	public final String version;
 	public final Distribution dist;
+	public final boolean reverseMappings;
 
-	public CichlidArgs(String version, Distribution dist) {
+	public CichlidArgs(String version, Distribution dist, boolean reverseMappings) {
 		this.version = version;
 		this.dist = dist;
+		this.reverseMappings = reverseMappings;
 	}
 
 	@Nullable
@@ -39,6 +42,8 @@ public class CichlidArgs {
 		if (parsed == null)
 			return null;
 
-		return new CichlidArgs(version, parsed);
+		boolean reverseMappings = Objects.equals(map.get("reverse_mappings"), "true");
+
+		return new CichlidArgs(version, parsed, reverseMappings);
 	}
 }
