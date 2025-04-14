@@ -1,6 +1,6 @@
 package io.github.cichlidmc.cichlid.impl.transformer;
 
-import io.github.cichlidmc.cichlid.impl.transformer.remap.ReadingClassProvider;
+import io.github.cichlidmc.cichlid.impl.remap.ReadingClassProvider;
 import net.neoforged.art.api.ClassProvider;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;

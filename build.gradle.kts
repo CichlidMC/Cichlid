@@ -73,12 +73,14 @@ java {
 
 tasks.named<Jar>("jar") {
     manifest.attributes["Premain-Class"] = "io.github.cichlidmc.cichlid.impl.CichlidAgent"
+    manifest.attributes["Can-Retransform-Classes"] = "true"
 }
 
 tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
     archiveClassifier = "prod"
     configurations = listOf(shade)
     manifest.attributes["Premain-Class"] = "io.github.cichlidmc.cichlid.impl.CichlidAgent"
+    manifest.attributes["Can-Retransform-Classes"] = "true"
 
     // exclude signatures and manifest of dependencies
     exclude("META-INF/**")

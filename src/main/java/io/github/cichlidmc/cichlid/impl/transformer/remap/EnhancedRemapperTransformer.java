@@ -32,7 +32,6 @@ public final class EnhancedRemapperTransformer {
 	public static final String DESC = Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(String.class));
 
 	public static byte[] run(byte[] bytes) {
-		System.out.println("RUNNING!");
 		ClassReader reader = new ClassReader(bytes);
 		ClassNode node = new ClassNode();
 		reader.accept(node, 0);

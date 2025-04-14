@@ -1,11 +1,11 @@
 package io.github.cichlidmc.cichlid.impl.transformer;
 
-import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
+import io.github.cichlidmc.cichlid.impl.CichlidImpl;
+import io.github.cichlidmc.cichlid.impl.remap.ReadingClassProvider;
 import io.github.cichlidmc.cichlid.impl.transformer.remap.EnhancedRemapperTransformer;
 import io.github.cichlidmc.cichlid.impl.transformer.remap.LookupUsingClassWriter;
-import io.github.cichlidmc.cichlid.impl.transformer.remap.MinecraftRemapper;
-import io.github.cichlidmc.cichlid.impl.transformer.remap.ReadingClassProvider;
 import io.github.cichlidmc.cichlid.impl.transformer.remap.RemappedClass;
+import io.github.cichlidmc.cichlid.impl.transformer.remap.RuntimeMinecraftRemapper;
 import io.github.cichlidmc.cichlid.impl.util.ClassLoaderResource;
 import io.github.cichlidmc.sushi.api.TransformerManager;
 import org.jetbrains.annotations.ApiStatus;
@@ -23,15 +23,13 @@ import java.util.List;
 public final class CichlidTransformer implements ClassFileTransformer {
 	public static final List<String> JAVA_PACKAGES = Arrays.asList("java/", "jdk/", "sun/", "javax/");
 
-	private static final CichlidLogger logger = CichlidLogger.get(CichlidTransformer.class);
-
 	private static boolean stopped = false;
 
 	private final ClassLoaderResource<SuperclassLookup> superclassLookups;
 	private final ClassLoaderResource<ReadingClassProvider> classProviders;
 
 	@Nullable
-	private MinecraftRemapper remapper;
+	private RuntimeMinecraftRemapper remapper;
 	private TransformerManager manager;
 
 	private CichlidTransformer() {
@@ -88,7 +86,7 @@ public final class CichlidTransformer implements ClassFileTransformer {
 	private byte[] transformRemapped(@Nullable ClassLoader loader, String name, byte[] bytes) {
 		// best-effort check for Minecraft classes loading too early
 		if (this.manager == null && (name.startsWith("net/minecraft") || name.startsWith("com/mojang"))) {
-			return ClassPoisoner.poison(name, bytes, new Throwable("Tried to load a Minecraft class too early: " + name));
+			throw new RuntimeException("Tried to load a Minecraft class too early: " + name);
 		}
 
 		ClassReader reader = new ClassReader(bytes);
@@ -121,7 +119,7 @@ public final class CichlidTransformer implements ClassFileTransformer {
 	}
 
 	@ApiStatus.Internal
-	public void setRemapper(@Nullable MinecraftRemapper remapper) {
+	public void setRemapper(@Nullable RuntimeMinecraftRemapper remapper) {
 		if (this.remapper != null) {
 			throw new IllegalStateException("Remapper is already set!");
 		}
@@ -151,6 +149,14 @@ public final class CichlidTransformer implements ClassFileTransformer {
 		// ClassLookup.createInfo(EnhancedRemapperTransformer.Dummy.class);
 		CichlidTransformer transformer = new CichlidTransformer();
 		instrumentation.addTransformer(transformer);
+
+		try {
+			// make sure this class is loaded early
+			Class.forName("net.neoforged.art.internal.EnhancedRemapper", false, CichlidImpl.class.getClassLoader());
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+
 		return transformer;
 	}
 }

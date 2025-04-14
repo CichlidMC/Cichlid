@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -111,6 +112,19 @@ public class Utils {
 					collector.write(buffer, 0, read);
 				}
 			}
+		}
+	}
+
+	public static byte[] readClassLoaderResource(@Nullable ClassLoader loader, String path) {
+		ClassLoader toUse = loader != null ? loader : Utils.class.getClassLoader();
+		URL url = toUse.getResource(path);
+		if (url == null)
+			return null;
+
+		try (InputStream stream = url.openStream()) {
+			return readAllBytes(stream);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 }

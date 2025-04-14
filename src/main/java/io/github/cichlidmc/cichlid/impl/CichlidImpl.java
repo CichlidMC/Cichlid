@@ -14,8 +14,10 @@ import io.github.cichlidmc.cichlid.impl.loading.mod.ModLoader;
 import io.github.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import io.github.cichlidmc.cichlid.impl.loading.plugin.PluginLoader;
 import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
+import io.github.cichlidmc.cichlid.impl.remap.MinecraftRemapper;
+import io.github.cichlidmc.cichlid.impl.remap.signing.SigningShenanigans;
 import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
-import io.github.cichlidmc.cichlid.impl.transformer.remap.MinecraftRemapper;
+import io.github.cichlidmc.cichlid.impl.transformer.remap.RuntimeMinecraftRemapper;
 import io.github.cichlidmc.cichlid.impl.util.FileUtils;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
 import io.github.cichlidmc.sushi.api.TransformerManager;
@@ -94,14 +96,12 @@ public class CichlidImpl {
 		// register transformer now so it can catch early classloading
 		CichlidTransformer transformer = CichlidTransformer.setup(instrumentation);
 
-		try {
-			// make sure this class is loaded early
-			Class.forName("net.neoforged.art.internal.EnhancedRemapper", false, CichlidImpl.class.getClassLoader());
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
+		IMappingFile mappings = readMappings(args.reverseMappings);
+		if (mappings != null) {
+			SigningShenanigans.apply(instrumentation);
+			MinecraftRemapper.handle(mappings, instrumentation);
+			transformer.setRemapper(new RuntimeMinecraftRemapper(mappings));
 		}
-
-		transformer.setRemapper(getRemapper(args.reverseMappings));
 
 		logger.info("Loading plugins...");
 		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load(instrumentation);
@@ -138,7 +138,7 @@ public class CichlidImpl {
 	}
 
 	@Nullable
-	private static MinecraftRemapper getRemapper(boolean reverse) {
+	private static IMappingFile readMappings(boolean reverse) {
 		Path file = CichlidPaths.CICHLID_ROOT.resolve(".meta").resolve("mappings.txt");
 		if (!Files.exists(file)) {
 			logger.info("No mappings found, proceeding without them");
@@ -151,7 +151,7 @@ public class CichlidImpl {
 			IMappingFile mappings = IMappingFile.load(file.toFile());
 			long seconds = (System.currentTimeMillis() - start) / 1000;
 			logger.info("Mappings successfully loaded in " + seconds + " second(s)");
-			return new MinecraftRemapper(reverse ? mappings.reverse() : mappings);
+			return reverse ? mappings.reverse() : mappings;
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to read mappings", e);
 		}

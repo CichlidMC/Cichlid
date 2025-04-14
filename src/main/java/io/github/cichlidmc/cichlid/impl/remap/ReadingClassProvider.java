@@ -1,12 +1,10 @@
-package io.github.cichlidmc.cichlid.impl.transformer.remap;
+package io.github.cichlidmc.cichlid.impl.remap;
 
+import io.github.cichlidmc.cichlid.impl.transformer.remap.ClassInfoFactory;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
 import net.neoforged.art.api.ClassProvider;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,16 +36,7 @@ public final class ReadingClassProvider implements ClassProvider {
 
 	@Nullable
 	public static IClassInfo readClassInfo(@Nullable ClassLoader loader, String name) {
-		ClassLoader toUse = loader != null ? loader : ReadingClassProvider.class.getClassLoader();
-		URL url = toUse.getResource(name + ".class");
-		if (url == null)
-			return null;
-
-		try (InputStream stream = url.openStream()) {
-			byte[] bytes = Utils.readAllBytes(stream);
-			return ClassInfoFactory.create(bytes);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		byte[] bytes = Utils.readClassLoaderResource(loader, name + ".class");
+		return bytes == null ? null : ClassInfoFactory.create(bytes);
 	}
 }

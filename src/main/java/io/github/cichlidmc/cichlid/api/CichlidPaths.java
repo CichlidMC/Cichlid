@@ -27,4 +27,8 @@ public class CichlidPaths {
 	 * Configs folder, ".minecraft/cichlid/configs"
 	 */
 	public static final Path CONFIGS = CICHLID_ROOT.resolve("configs");
+	/**
+	 * Files cached by Cichlid, ".minecraft/cichlid/.cache"
+	 */
+	public static final Path CACHE = CICHLID_ROOT.resolve(".cache");
 }
