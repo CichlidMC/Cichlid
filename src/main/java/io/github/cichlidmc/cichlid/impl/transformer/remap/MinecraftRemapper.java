@@ -1,6 +1,5 @@
 package io.github.cichlidmc.cichlid.impl.transformer.remap;
 
-import io.github.cichlidmc.cichlid.impl.transformer.lookup.ClassLookup;
 import net.neoforged.art.api.ClassProvider;
 import net.neoforged.art.api.Transformer;
 import net.neoforged.art.internal.RenamingTransformer;
@@ -11,24 +10,19 @@ public final class MinecraftRemapper {
 	private final IMappingFile mappings;
 
 	public MinecraftRemapper(IMappingFile mappings) {
-		this.mappings = NoopMappingFile.INSTANCE;
+		this.mappings = mappings;
 	}
 
 	@Nullable
-	public RemappedClass remap(ClassLookup lookup, String name, byte[] bytes) {
+	public RemappedClass remap(ReadingClassProvider provider, String name, byte[] bytes) {
 		// this is super inefficient, but it's Fine:tm:
 		TrackedMappingFile tracker = new TrackedMappingFile(this.mappings);
-		ClassProvider provider = new DualClassProvider(ClassProvider.builder().addClass(name, bytes).build(), lookup);
+		ClassProvider fullProvider = new DualClassProvider(ClassProvider.builder().addClass(name, bytes).build(), provider);
 
-		Transformer transformer = new RenamingTransformer(provider, tracker, message -> {}, false);
+		Transformer transformer = new RenamingTransformer(fullProvider, tracker, message -> {}, false);
 
 		Transformer.ClassEntry entry = Transformer.ClassEntry.create(name + ".class", Transformer.Entry.STABLE_TIMESTAMP, bytes);
-		try {
-			Transformer.ClassEntry processed = transformer.process(entry);
-			return tracker.remappedAnything() ? RemappedClass.of(processed) : null;
-		} catch (CancelRemappingException ignored) {
-			System.out.println("Remapping of " + name + " was cancelled");
-			return null;
-		}
+		Transformer.ClassEntry processed = transformer.process(entry);
+		return tracker.remappedAnything() ? RemappedClass.of(processed) : null;
 	}
 }

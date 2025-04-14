@@ -1,16 +1,14 @@
 package io.github.cichlidmc.cichlid.impl.transformer.remap;
 
-import io.github.cichlidmc.cichlid.impl.transformer.lookup.ClassLookup;
-import net.neoforged.art.api.ClassProvider;
+import io.github.cichlidmc.cichlid.impl.transformer.SuperclassLookup;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 
 public final class LookupUsingClassWriter extends ClassWriter {
-	private final ClassLookup lookup;
+	private final SuperclassLookup lookup;
 
-	public LookupUsingClassWriter(@Nullable ClassReader classReader, int flags, ClassLookup lookup) {
+	public LookupUsingClassWriter(@Nullable ClassReader classReader, int flags, SuperclassLookup lookup) {
 		super(classReader, flags);
 		this.lookup = lookup;
 	}
@@ -20,30 +18,18 @@ public final class LookupUsingClassWriter extends ClassWriter {
 		if (type1.equals(type2))
 			return type1;
 
-		ClassProvider.IClassInfo info1 = this.lookup.getInfo(type1);
-		ClassProvider.IClassInfo info2 = this.lookup.getInfo(type2);
-		if (info1 == null || info2 == null)
-			return ClassLookup.OBJECT;
-
-		if (this.lookup.isSameOrSuper(info1, info2)) {
+		if (this.lookup.isSameOrSuper(type1, type2)) {
 			return type1;
-		} else if (this.lookup.isSameOrSuper(info2, info1)) {
+		} else if (this.lookup.isSameOrSuper(type2, type1)) {
 			return type2;
-		} else if (isInterface(info1) || isInterface(info2)) {
-			return ClassLookup.OBJECT;
 		} else {
 			do {
-				info1 = this.lookup.getInfo(info1.getSuper());
-				if (info1 == null) {
-					return ClassLookup.OBJECT;
+				type1 = this.lookup.getSuperclass(type1);
+				if (type1 == null) {
+					return SuperclassLookup.OBJECT;
 				}
-
-			} while (!this.lookup.isSameOrSuper(info1, info2));
+			} while (!this.lookup.isSameOrSuper(type1, type2));
 			return type1;
 		}
-	}
-
-	private static boolean isInterface(ClassProvider.IClassInfo info) {
-		return (info.getAccess() & Opcodes.ACC_INTERFACE) != 0;
 	}
 }

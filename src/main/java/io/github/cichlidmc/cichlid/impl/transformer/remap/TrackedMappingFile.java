@@ -42,7 +42,7 @@ public final class TrackedMappingFile implements IMappingFile {
 	@Override
 	public String remapClass(String desc) {
 		String clazz = this.wrapped.remapClass(desc);
-		if (desc.equals(clazz))
+		if (!desc.equals(clazz))
 			this.mark();
 		return clazz;
 	}
