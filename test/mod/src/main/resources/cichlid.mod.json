@@ -6,5 +6,20 @@
   "entrypoints": {
     "early_setup": "io.github.cichlidmc.test_mod.TestEarlySetup",
     "pre_launch": "io.github.cichlidmc.test_mod.TestPreLaunch"
+  },
+  "incompatibilities": {
+    "cichlid_test_mod": {
+      "predicate": "any",
+      "reason": "smells bad",
+      "conditions": [
+        {
+          "type": "cichlid:not",
+          "condition": {
+            "type": "cichlid:mod_is_loaded",
+            "id": "cichlid_test_mod"
+          }
+        }
+      ]
+    }
   }
 }

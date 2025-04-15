@@ -1,6 +1,6 @@
 {
   "target": "io.github.cichlidmc.test_app.Main",
-  "transform": {
+  "transforms": {
     "type": "inject",
     "point": "tail",
     "method": "main",

@@ -21,7 +21,7 @@ val shade: Configuration by configurations.creating
 dependencies {
     compileOnlyApi("org.jetbrains:annotations:24.1.0")
     shade(api("io.github.cichlidmc:TinyJson:1.0.1")!!)
-    shade(api("io.github.cichlidmc:Sushi:0.1.0")!!)
+    shade(api("io.github.cichlidmc:sushi:0.1.0")!!)
     shade(api("org.ow2.asm:asm-tree:9.7")!!)
 
     compileOnly("org.apache.logging.log4j:log4j-api:2.23.1")

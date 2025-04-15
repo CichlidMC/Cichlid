@@ -3,6 +3,8 @@ package io.github.cichlidmc.cichlid.api.metadata;
 import io.github.cichlidmc.cichlid.api.metadata.component.Dependency;
 import io.github.cichlidmc.cichlid.api.metadata.component.Incompatibility;
 import io.github.cichlidmc.cichlid.api.version.Version;
+import io.github.cichlidmc.tinycodecs.Codec;
+import io.github.cichlidmc.tinycodecs.CodecResult;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Map;
@@ -17,6 +19,11 @@ public interface Metadata {
 	 * Regex for valid IDs. No length limit, cannot be empty. Valid characters: a-z, 0-9, and _.
 	 */
 	Pattern ID_REGEX = Pattern.compile("[a-z0-9_]+");
+
+	/**
+	 * Codec for validated ID strings.
+	 */
+	Codec<String> ID_CODEC = Codec.STRING.validate(s -> isValidId(s) ? CodecResult.success(s) : CodecResult.error("Invalid ID: " + s));
 	
 	/**
 	 * The unique ID of this mod or plugin. Only one mod or plugin with a given ID can be loaded.

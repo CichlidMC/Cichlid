@@ -1,6 +1,7 @@
 package io.github.cichlidmc.cichlid.impl.loading;
 
 import io.github.cichlidmc.cichlid.api.metadata.Metadata;
+import io.github.cichlidmc.cichlid.api.metadata.component.Condition;
 import io.github.cichlidmc.cichlid.api.metadata.component.Dependency;
 import io.github.cichlidmc.cichlid.api.metadata.component.Incompatibility;
 import io.github.cichlidmc.cichlid.api.plugin.mod.LoadableMod;
@@ -20,10 +21,12 @@ import java.util.Map;
 public final class DependencyChecker {
 	private final Map<String, TypedMetadata> metadata;
 	private final LoadableType type;
+	private final ConditionContext context;
 
 	public DependencyChecker(Map<String, TypedMetadata> metadata, LoadableType type) {
 		this.metadata = metadata;
 		this.type = type;
+		this.context = new ConditionContext();
 	}
 
 	public void check(ProblemReport report) {
@@ -39,7 +42,13 @@ public final class DependencyChecker {
 	}
 
 	private void checkDependencies(Metadata metadata, ProblemReport report) {
-		for (Dependency dependency : metadata.dependencies().values()) {
+		dependencies: for (Dependency dependency : metadata.dependencies().values()) {
+			for (Condition condition : dependency.conditions()) {
+				if (!condition.matches(this.context)) {
+					continue dependencies;
+				}
+			}
+
 			String depId = dependency.id();
 			VersionPredicate predicate = dependency.predicate();
 			Metadata required = this.get(depId);
@@ -80,7 +89,13 @@ public final class DependencyChecker {
 	}
 
 	private void checkIncompatibilities(Metadata metadata, ProblemReport report) {
-		for (Incompatibility incompatibility : metadata.incompatibilities().values()) {
+		incompatibilities: for (Incompatibility incompatibility : metadata.incompatibilities().values()) {
+			for (Condition condition : incompatibility.conditions()) {
+				if (!condition.matches(this.context)) {
+					continue incompatibilities;
+				}
+			}
+
 			String incompatId = incompatibility.id();
 			TypedMetadata incompatible = this.getTyped(incompatId);
 			if (incompatible == null)
@@ -144,6 +159,20 @@ public final class DependencyChecker {
 
 		public static TypedMetadata mod(LoadableMod mod) {
 			return new TypedMetadata(mod.metadata, LoadableType.MOD);
+		}
+	}
+
+	private final class ConditionContext implements Condition.Context {
+		@Override
+		public boolean isPluginPresent(String id) {
+			TypedMetadata metadata = DependencyChecker.this.metadata.get(id);
+			return metadata != null && metadata.type == LoadableType.PLUGIN;
+		}
+
+		@Override
+		public boolean isModPresent(String id) {
+			TypedMetadata metadata = DependencyChecker.this.metadata.get(id);
+			return metadata != null && metadata.type == LoadableType.MOD;
 		}
 	}
 }

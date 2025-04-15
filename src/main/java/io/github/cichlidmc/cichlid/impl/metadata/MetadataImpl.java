@@ -103,12 +103,12 @@ class MetadataImpl implements Metadata {
 
 		Map<String, Dependency> dependencies = new HashMap<>();
 		json.getOptional("dependencies").ifPresent(
-				value -> value.asObject().forEach((k, v) -> dependencies.put(k, DependencyImpl.parse(v.asObject())))
+				value -> value.asObject().forEach((k, v) -> dependencies.put(k, DependencyImpl.parse(k, v.asObject())))
 		);
 
 		Map<String, Incompatibility> incompatibilities = new HashMap<>();
 		json.getOptional("incompatibilities").ifPresent(
-				value -> value.asObject().forEach((k, v) -> incompatibilities.put(k, IncompatibilityImpl.parse(v.asObject())))
+				value -> value.asObject().forEach((k, v) -> incompatibilities.put(k, IncompatibilityImpl.parse(k, v.asObject())))
 		);
 
 		return new MetadataImpl(id, name, version, description, credits, provides, dependencies, incompatibilities);

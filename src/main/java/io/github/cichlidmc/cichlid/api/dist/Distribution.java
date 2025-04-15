@@ -1,11 +1,14 @@
 package io.github.cichlidmc.cichlid.api.dist;
 
+import io.github.cichlidmc.tinycodecs.Codec;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
 public enum Distribution {
 	CLIENT, DEDICATED_SERVER;
+
+	public static final Codec<Distribution> CODEC = Codec.byName(Distribution.class, dist -> dist.name);
 
 	/**
 	 * The snake_case name of this distribution.

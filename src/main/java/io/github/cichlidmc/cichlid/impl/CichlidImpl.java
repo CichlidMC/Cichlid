@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class CichlidImpl {
+	public static final String ID = "cichlid";
+
 	private static final CichlidLogger logger = CichlidLogger.get("Cichlid");
 
 	private static boolean initialized;
