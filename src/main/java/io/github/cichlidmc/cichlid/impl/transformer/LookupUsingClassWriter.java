@@ -1,6 +1,5 @@
-package io.github.cichlidmc.cichlid.impl.transformer.remap;
+package io.github.cichlidmc.cichlid.impl.transformer;
 
-import io.github.cichlidmc.cichlid.impl.transformer.SuperclassLookup;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;

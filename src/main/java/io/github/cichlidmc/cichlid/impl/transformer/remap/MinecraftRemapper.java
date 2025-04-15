@@ -1,16 +1,15 @@
 package io.github.cichlidmc.cichlid.impl.transformer.remap;
 
-import io.github.cichlidmc.cichlid.impl.remap.ReadingClassProvider;
 import net.neoforged.art.api.ClassProvider;
 import net.neoforged.art.api.Transformer;
 import net.neoforged.art.internal.RenamingTransformer;
 import net.neoforged.srgutils.IMappingFile;
 import org.jetbrains.annotations.Nullable;
 
-public final class RuntimeMinecraftRemapper {
+public final class MinecraftRemapper {
 	private final IMappingFile mappings;
 
-	public RuntimeMinecraftRemapper(IMappingFile mappings) {
+	public MinecraftRemapper(IMappingFile mappings) {
 		this.mappings = mappings;
 	}
 

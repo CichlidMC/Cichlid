@@ -28,6 +28,9 @@ dependencies {
     shade(implementation("net.neoforged:AutoRenamingTool:2.0.3")!!)
     shade(implementation("org.ow2.asm:asm-commons:9.7")!!)
 
+    // for validating ASM injections
+//    implementation("org.ow2.asm:asm-analysis:9.7")
+
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
 }

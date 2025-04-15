@@ -27,6 +27,7 @@ application {
 
 tasks.named("run", JavaExec::class) {
     jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+    jvmArgs("-Xverify:all")
 
     agent.files.forEach {
         val arg = "-javaagent:$it=dist=client,version=1.21.4"

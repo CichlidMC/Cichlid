@@ -81,12 +81,7 @@ public class CichlidAgent {
 	}
 
 	private static void preloadCriticalClasses() {
-		criticalClasses.forEach(CichlidAgent::preload);
-	}
-
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private static void preload(Class<?> clazz) {
-		clazz.getDeclaredMethods();
+		criticalClasses.forEach(Utils::ensureLoaded);
 	}
 
 	private static final class CatastropheLogger {

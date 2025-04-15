@@ -1,6 +1,5 @@
-package io.github.cichlidmc.cichlid.impl.remap;
+package io.github.cichlidmc.cichlid.impl.transformer.remap;
 
-import io.github.cichlidmc.cichlid.impl.transformer.remap.ClassInfoFactory;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
 import net.neoforged.art.api.ClassProvider;
 import org.jetbrains.annotations.Nullable;

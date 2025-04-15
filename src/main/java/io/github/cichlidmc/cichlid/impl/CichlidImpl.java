@@ -14,10 +14,8 @@ import io.github.cichlidmc.cichlid.impl.loading.mod.ModLoader;
 import io.github.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import io.github.cichlidmc.cichlid.impl.loading.plugin.PluginLoader;
 import io.github.cichlidmc.cichlid.impl.logging.CichlidLogger;
-import io.github.cichlidmc.cichlid.impl.remap.MinecraftRemapper;
-import io.github.cichlidmc.cichlid.impl.remap.signing.SigningShenanigans;
 import io.github.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
-import io.github.cichlidmc.cichlid.impl.transformer.remap.RuntimeMinecraftRemapper;
+import io.github.cichlidmc.cichlid.impl.transformer.remap.shenanigans.RemapShenanigans;
 import io.github.cichlidmc.cichlid.impl.util.FileUtils;
 import io.github.cichlidmc.cichlid.impl.util.Utils;
 import io.github.cichlidmc.sushi.api.TransformerManager;
@@ -80,6 +78,8 @@ public class CichlidImpl {
 		readVersion();
 		logger.info("Cichlid version: " + version());
 
+		logger.info("Current Java information: " + System.getProperty("java.vendor") + ' ' + System.getProperty("java.version"));
+
 		logger.space();
 
 		logger.info("Parsing arguments...");
@@ -93,15 +93,12 @@ public class CichlidImpl {
 
 		logger.space();
 
-		// register transformer now so it can catch early classloading
-		CichlidTransformer transformer = CichlidTransformer.setup(instrumentation);
-
 		IMappingFile mappings = readMappings(args.reverseMappings);
 		if (mappings != null) {
-			SigningShenanigans.apply(instrumentation);
-			MinecraftRemapper.handle(mappings, instrumentation);
-			transformer.setRemapper(new RuntimeMinecraftRemapper(mappings));
+			RemapShenanigans.apply(mappings, instrumentation);
 		}
+
+		CichlidTransformer transformer = CichlidTransformer.setup(mappings, instrumentation);
 
 		logger.info("Loading plugins...");
 		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load(instrumentation);

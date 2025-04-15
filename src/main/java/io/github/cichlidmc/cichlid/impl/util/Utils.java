@@ -127,4 +127,9 @@ public class Utils {
 			throw new RuntimeException(e);
 		}
 	}
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	public static void ensureLoaded(Class<?> clazz) {
+		clazz.getDeclaredMethods();
+	}
 }

@@ -1,13 +1,11 @@
 package io.github.cichlidmc.cichlid.impl.transformer;
 
-import io.github.cichlidmc.cichlid.impl.CichlidImpl;
-import io.github.cichlidmc.cichlid.impl.remap.ReadingClassProvider;
-import io.github.cichlidmc.cichlid.impl.transformer.remap.EnhancedRemapperTransformer;
-import io.github.cichlidmc.cichlid.impl.transformer.remap.LookupUsingClassWriter;
+import io.github.cichlidmc.cichlid.impl.transformer.remap.MinecraftRemapper;
+import io.github.cichlidmc.cichlid.impl.transformer.remap.ReadingClassProvider;
 import io.github.cichlidmc.cichlid.impl.transformer.remap.RemappedClass;
-import io.github.cichlidmc.cichlid.impl.transformer.remap.RuntimeMinecraftRemapper;
 import io.github.cichlidmc.cichlid.impl.util.ClassLoaderResource;
 import io.github.cichlidmc.sushi.api.TransformerManager;
+import net.neoforged.srgutils.IMappingFile;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
@@ -25,14 +23,15 @@ public final class CichlidTransformer implements ClassFileTransformer {
 
 	private static boolean stopped = false;
 
+	@Nullable
+	private final MinecraftRemapper remapper;
 	private final ClassLoaderResource<SuperclassLookup> superclassLookups;
 	private final ClassLoaderResource<ReadingClassProvider> classProviders;
 
-	@Nullable
-	private RuntimeMinecraftRemapper remapper;
 	private TransformerManager manager;
 
-	private CichlidTransformer() {
+	private CichlidTransformer(@Nullable IMappingFile mappings) {
+		this.remapper = mappings == null ? null : new MinecraftRemapper(mappings);
 		this.superclassLookups = new ClassLoaderResource<>(SuperclassLookup::new);
 		this.classProviders = new ClassLoaderResource<>(ReadingClassProvider::new);
 	}
@@ -40,10 +39,11 @@ public final class CichlidTransformer implements ClassFileTransformer {
 	@Override
 	public byte[] transform(@Nullable ClassLoader loader, @Nullable String name, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
 		// don't transform unnamed classes, gets weird
-		if (name == null)
+		// if transforming was emergency stopped, do nothing
+		// don't transform classes from Java itself, opens too many cans of worms
+		// don't let mods transform Cichlid itself for the sake of stability. If you're a disgruntled modder reading this line, sorry, but please open an issue or PR!
+		if (name == null || stopped || isJavaClass(name) || name.startsWith("io/github/cichlidmc/cichlid/"))
 			return null;
-
-		// System.out.println("transforming " + name + " on " + loader + " on " + Thread.currentThread().getName());
 
 		try {
 			return this.transformSafe(loader, name, bytes);
@@ -53,24 +53,6 @@ public final class CichlidTransformer implements ClassFileTransformer {
 	}
 
 	private byte[] transformSafe(@Nullable ClassLoader loader, String name, byte[] bytes) {
-		if (stopped) {
-			return null;
-		}
-
-		// don't transform built-in Java classes, that opens too many cans of worms
-		if (isJavaClass(name))
-			return null;
-
-		// special case, see javadoc
-		if (name.equals(EnhancedRemapperTransformer.CLASS)) {
-			return EnhancedRemapperTransformer.run(bytes);
-		}
-
-		// don't let mods transform Cichlid itself
-		if (name.startsWith("io/github/cichlidmc/cichlid/")) {
-			return null;
-		}
-
 		if (this.remapper != null) {
 			ReadingClassProvider provider = this.classProviders.get(loader);
 			RemappedClass remapped = this.remapper.remap(provider, name, bytes);
@@ -105,7 +87,6 @@ public final class CichlidTransformer implements ClassFileTransformer {
 		SuperclassLookup lookup = this.superclassLookups.get(loader);
 		ClassWriter writer = new LookupUsingClassWriter(reader, ClassWriter.COMPUTE_FRAMES, lookup);
 		node.accept(writer);
-		// System.out.println("transformed " + name + " on " + Thread.currentThread().getName());
 		return writer.toByteArray();
 	}
 
@@ -116,16 +97,6 @@ public final class CichlidTransformer implements ClassFileTransformer {
 		}
 
 		this.manager = manager;
-	}
-
-	@ApiStatus.Internal
-	public void setRemapper(@Nullable RuntimeMinecraftRemapper remapper) {
-		if (this.remapper != null) {
-			throw new IllegalStateException("Remapper is already set!");
-		}
-
-		System.out.println("remapper set");
-		this.remapper = remapper;
 	}
 
 	public static void emergencyStop() {
@@ -141,22 +112,9 @@ public final class CichlidTransformer implements ClassFileTransformer {
 		return false;
 	}
 
-	public static CichlidTransformer setup(Instrumentation instrumentation) {
-		// ClassLookup.createInfo(Temporal.class);
-		// ClassLookup.createInfo(JsonValue.class);
-		// ClassLookup.createInfo(TransformerManager.Builder.class);
-		// ClassLookup.createInfo(LockSupport.class);
-		// ClassLookup.createInfo(EnhancedRemapperTransformer.Dummy.class);
-		CichlidTransformer transformer = new CichlidTransformer();
+	public static CichlidTransformer setup(@Nullable IMappingFile mappings, Instrumentation instrumentation) {
+		CichlidTransformer transformer = new CichlidTransformer(mappings);
 		instrumentation.addTransformer(transformer);
-
-		try {
-			// make sure this class is loaded early
-			Class.forName("net.neoforged.art.internal.EnhancedRemapper", false, CichlidImpl.class.getClassLoader());
-		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-
 		return transformer;
 	}
 }
