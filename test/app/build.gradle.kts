@@ -4,7 +4,7 @@ plugins {
 }
 
 base.archivesName = "CichlidTestApp"
-group = "io.github.cichlidmc"
+group = "fish.cichlidmc"
 version = properties["version"]!!
 
 repositories {
@@ -22,7 +22,7 @@ dependencies {
 }
 
 application {
-    mainClass = "io.github.cichlidmc.test_app.Main"
+    mainClass = "fish.cichlidmc.test_app.Main"
 }
 
 tasks.named("run", JavaExec::class) {

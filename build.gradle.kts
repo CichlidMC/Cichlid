@@ -4,14 +4,13 @@ plugins {
     id("maven-publish")
 }
 
-base.archivesName = "cichlid"
-group = "io.github.cichlidmc"
+group = "fish.cichlidmc"
 version = "0.3.2"
 
 allprojects {
     repositories {
         mavenCentral()
-        maven("https://mvn.devos.one/snapshots/")
+        maven("https://mvn.devos.one/releases/")
     }
 }
 
@@ -20,8 +19,8 @@ val shade: Configuration by configurations.creating
 
 dependencies {
     compileOnlyApi("org.jetbrains:annotations:24.1.0")
-    shade(api("io.github.cichlidmc:TinyJson:1.0.1")!!)
-    shade(api("io.github.cichlidmc:sushi:0.1.0")!!)
+    shade(api("fish.cichlidmc:tiny-json:1.0.1")!!)
+    shade(api("fish.cichlidmc:sushi:0.1.0")!!)
     shade(api("org.ow2.asm:asm-tree:9.7")!!)
 
     compileOnly("org.apache.logging.log4j:log4j-api:2.23.1")
@@ -75,28 +74,28 @@ java {
 // pluginApiJar: plugin-api, for plugins at compile time
 
 tasks.named<Jar>("jar") {
-    manifest.attributes["Premain-Class"] = "io.github.cichlidmc.cichlid.impl.CichlidAgent"
+    manifest.attributes["Premain-Class"] = "fish.cichlidmc.cichlid.impl.CichlidAgent"
     manifest.attributes["Can-Retransform-Classes"] = "true"
 }
 
 tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
     archiveClassifier = "prod"
     configurations = listOf(shade)
-    manifest.attributes["Premain-Class"] = "io.github.cichlidmc.cichlid.impl.CichlidAgent"
+    manifest.attributes["Premain-Class"] = "fish.cichlidmc.cichlid.impl.CichlidAgent"
     manifest.attributes["Can-Retransform-Classes"] = "true"
 
     // exclude signatures and manifest of dependencies
     exclude("META-INF/**")
 
-    relocate("net.neoforged", "io.github.cichlidmc.cichlid.shadow.net.neoforged")
+    relocate("net.neoforged", "fish.cichlidmc.cichlid.shadow.net.neoforged")
 }
 
 tasks.named<Jar>("modApiJar") {
     dependsOn("jar")
     archiveClassifier = "mod-api"
     from(zipTree(files(tasks.named("jar")).singleFile))
-    exclude("io/github/cichlidmc/cichlid/impl/**")
-    exclude("io/github/cichlidmc/cichlid/api/plugin/**")
+    exclude("fish/cichlidmc/cichlid/impl/**")
+    exclude("fish/cichlidmc/cichlid/api/plugin/**")
     includeEmptyDirs = false
 }
 
@@ -104,8 +103,8 @@ tasks.named<Jar>("modApiSourcesJar") {
     dependsOn("sourcesJar")
     archiveClassifier = "mod-api-sources"
     from(zipTree(files(tasks.named("sourcesJar")).singleFile))
-    exclude("io/github/cichlidmc/cichlid/impl/**")
-    exclude("io/github/cichlidmc/cichlid/api/plugin/**")
+    exclude("fish/cichlidmc/cichlid/impl/**")
+    exclude("fish/cichlidmc/cichlid/api/plugin/**")
     includeEmptyDirs = false
 }
 
@@ -113,8 +112,8 @@ tasks.named<Jar>("pluginApiJar") {
     dependsOn("jar")
     archiveClassifier = "plugin-api"
     from(zipTree(files(tasks.named("jar")).singleFile))
-    exclude("io/github/cichlidmc/cichlid/impl/**")
-    exclude("io/github/cichlidmc/cichlid/api/mod/**")
+    exclude("fish/cichlidmc/cichlid/impl/**")
+    exclude("fish/cichlidmc/cichlid/api/mod/**")
     includeEmptyDirs = false
 }
 
@@ -122,8 +121,8 @@ tasks.named<Jar>("pluginApiSourcesJar") {
     dependsOn("sourcesJar")
     archiveClassifier = "plugin-api-sources"
     from(zipTree(files(tasks.named("sourcesJar")).singleFile))
-    exclude("io/github/cichlidmc/cichlid/impl/**")
-    exclude("io/github/cichlidmc/cichlid/api/mod/**")
+    exclude("fish/cichlidmc/cichlid/impl/**")
+    exclude("fish/cichlidmc/cichlid/api/mod/**")
     includeEmptyDirs = false
 }
 
@@ -149,9 +148,11 @@ publishing {
     }
 
     repositories {
-        maven("https://mvn.devos.one/snapshots") {
-            name = "devOS"
-            credentials(PasswordCredentials::class)
+        listOf("Releases", "Snapshots").forEach {
+            maven("https://mvn.devos.one/${it.lowercase()}") {
+                name = "devOs$it"
+                credentials(PasswordCredentials::class)
+            }
         }
     }
 }

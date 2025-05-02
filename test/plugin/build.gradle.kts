@@ -3,7 +3,7 @@ plugins {
 }
 
 base.archivesName = "CichlidTestPlugin"
-group = "io.github.cichlidmc"
+group = "fish.cichlidmc"
 version = properties["version"]!!
 
 repositories {

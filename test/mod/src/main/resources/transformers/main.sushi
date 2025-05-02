@@ -1,9 +1,9 @@
 {
-  "target": "io.github.cichlidmc.test_app.Main",
+  "target": "fish.cichlidmc.test_app.Main",
   "transforms": {
     "type": "inject",
     "point": "tail",
     "method": "main",
-    "hook": "io.github.cichlidmc.test_mod.TestModHooks.onMain"
+    "hook": "fish.cichlidmc.test_mod.TestModHooks.onMain"
   }
 }

@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish to Maven
+        description: Publish Mode (release, snapshot, none)
         required: true
-        default: "false"
+        default: "none"
 
 jobs:
   build:
@@ -40,6 +40,10 @@ jobs:
             name: Artifacts
             path: build/libs/
 
-      -   name: Publish
-          if: ${{ github.event.inputs.publish }}
-          run: ./gradlew publish -PdevOSUsername=cichlidmc -PdevOSPassword="${{ secrets.DEVOS_PASS }}"
+      -   name: Publish Release
+          if: ${{ github.event.inputs.publish == 'release' }}
+          run: ./gradlew publishAllPublicationsToDevOsReleasesRepository -PdevOsReleasesUsername=cichlidmc -PdevOsReleasesPassword="${{ secrets.DEVOS_PASS }}"
+
+      -   name: Publish Snapshot
+          if: ${{ github.event.inputs.publish == 'snapshot' }}
+          run: ./gradlew publishAllPublicationsToDevOsSnapshotsRepository -PdevOsSnapshotsUsername=cichlidmc -PdevOsSnapshotsPassword="${{ secrets.DEVOS_PASS }}"

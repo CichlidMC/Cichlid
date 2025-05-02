@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "description": "Test mod for Cichlid",
   "entrypoints": {
-    "early_setup": "io.github.cichlidmc.test_mod.TestEarlySetup",
-    "pre_launch": "io.github.cichlidmc.test_mod.TestPreLaunch"
+    "early_setup": "fish.cichlidmc.test_mod.TestEarlySetup",
+    "pre_launch": "fish.cichlidmc.test_mod.TestPreLaunch"
   },
   "incompatibilities": {
     "cichlid_test_mod": {

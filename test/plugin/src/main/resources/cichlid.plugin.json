@@ -6,5 +6,5 @@
   "credits": {
     "CichlidMC": "Author"
   },
-  "class_name": "io.github.cichlidmc.test_plugin.TestPlugin"
+  "class_name": "fish.cichlidmc.test_plugin.TestPlugin"
 }
