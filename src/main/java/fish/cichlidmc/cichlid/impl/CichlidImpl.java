@@ -1,5 +1,6 @@
 package fish.cichlidmc.cichlid.impl;
 
+import fish.cichlidmc.cichlid.api.Cichlid;
 import fish.cichlidmc.cichlid.api.CichlidPaths;
 import fish.cichlidmc.cichlid.api.dist.Distribution;
 import fish.cichlidmc.cichlid.api.loaded.LoadedSet;
@@ -14,18 +15,18 @@ import fish.cichlidmc.cichlid.impl.loading.mod.ModLoader;
 import fish.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import fish.cichlidmc.cichlid.impl.loading.plugin.PluginLoader;
 import fish.cichlidmc.cichlid.impl.logging.CichlidLogger;
+import fish.cichlidmc.cichlid.impl.metadata.component.condition.ConditionRegistry;
 import fish.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
-import fish.cichlidmc.cichlid.impl.transformer.remap.shenanigans.RemapShenanigans;
 import fish.cichlidmc.cichlid.impl.util.FileUtils;
-import fish.cichlidmc.cichlid.impl.util.Utils;
+import fish.cichlidmc.fishflakes.api.value.Late;
 import fish.cichlidmc.sushi.api.TransformerManager;
-import fish.cichlidmc.sushi.api.util.Id;
+import fish.cichlidmc.sushi.api.registry.Id;
+import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.TinyJson;
 import fish.cichlidmc.tinyjson.value.JsonValue;
-import net.neoforged.srgutils.IMappingFile;
-import org.jetbrains.annotations.Nullable;
+import fish.cichlidmc.tinyjson.value.primitive.JsonString;
+import org.jspecify.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -36,96 +37,86 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class CichlidImpl {
-	public static final String ID = "cichlid";
+	// cichlid is initialized if any value has been set (the value will always be null)
+	public static final Late.Mutable<@Nullable Void> INITIALIZED = Late.unset();
+
+	public static final Late.Mutable<Version> VERSION = Late.unset();
+	public static final Late.Mutable<Distribution> DISTRIBUTION = Late.unset();
+	public static final Late.Mutable<Version> MINECRAFT_VERSION = Late.unset();
+	public static final Late.Mutable<LoadedSet<Plugin>> PLUGINS = Late.unset();
+	public static final Late.Mutable<LoadedSet<Mod>> MODS = Late.unset();
+
+	public static final String CICHLID_VERSION_FILE = "cichlid_version.txt";
+	public static final String CLIENT_MAIN = "net.minecraft.client.main.Main";
+	public static final String MINECRAFT_VERSION_FILE = "version.json";
 
 	private static final CichlidLogger logger = CichlidLogger.get("Cichlid");
-
-	private static boolean initialized;
-	private static Version version;
-	private static Distribution dist;
-	private static Version mcVersion;
-	private static LoadedSet<Plugin> plugins;
-	private static LoadedSet<Mod> mods;
-
-	public static boolean isInitialized() {
-		return initialized;
-	}
-
-	public static Version version() {
-		return Utils.getOrThrow(version, "Cichlid version is not loaded yet");
-	}
-
-	public static Version mcVersion() {
-		return Utils.getOrThrow(mcVersion, "Minecraft version is not loaded yet");
-	}
-
-	public static Distribution distribution() {
-		return Utils.getOrThrow(dist, "Distribution is not loaded yet");
-	}
-
-	public static LoadedSet<Plugin> plugins() {
-		return Utils.getOrThrow(plugins, "Plugins are not loaded yet");
-	}
-
-	public static LoadedSet<Mod> mods() {
-		return Utils.getOrThrow(mods, "Mods are not loaded yet");
-	}
+	private static final ClassLoader classLoader = CichlidImpl.class.getClassLoader();
 
 	public static void load(@Nullable String stringArgs, Instrumentation instrumentation) {
-		if (isInitialized()) {
+		if (INITIALIZED.isSet()) {
 			throw new IllegalStateException("Cichlid is already loaded!");
 		}
 
 		logger.info("Cichlid initializing!");
-		readVersion();
-		logger.info("Cichlid version: " + version());
 
-		logger.info("Current Java information: " + System.getProperty("java.vendor") + ' ' + System.getProperty("java.version"));
-
-		logger.space();
-
-		logger.info("Parsing arguments...");
-
-		CichlidArgs args = parseArguments(stringArgs);
-		mcVersion = Version.of(args.version);
-		dist = args.dist;
-
-		logger.info("Minecraft version: " + mcVersion());
-		logger.info("Distribution: " + distribution());
-
-		logger.space();
-
-		IMappingFile mappings = readMappings(args.reverseMappings);
-		if (mappings != null) {
-			RemapShenanigans.apply(mappings, instrumentation);
+		try {
+			VERSION.set(readVersion());
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to read Cichlid version", e);
 		}
 
-		CichlidTransformer transformer = CichlidTransformer.setup(mappings, instrumentation);
+		logger.info("Version: " + Cichlid.version());
+		logger.space();
+
+		logger.info("Current Java information: " + System.getProperty("java.vendor") + ' ' + System.getProperty("java.version"));
+		logger.info("Can retransform: " + instrumentation.isRetransformClassesSupported());
+		logger.info("Can redefine: " + instrumentation.isRedefineClassesSupported());
+
+		logger.space();
+
+		DISTRIBUTION.set(detectDistribution());
+
+		try {
+			MINECRAFT_VERSION.set(detectMinecraftVersion());
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to detect Minecraft version", e);
+		}
+
+		logger.info("Loading Minecraft " + Cichlid.minecraftVersion() + " (" + Cichlid.distribution() + ')');
+		logger.space();
+
+		logger.info("Bootstrapping registries...");
+		ConditionRegistry.bootstrap();
+
+		instrumentation.addTransformer(CichlidTransformer.INSTANCE);
 
 		logger.info("Loading plugins...");
 		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load(instrumentation);
-		plugins = PluginLoader.toLoadedSet(loadedPlugins);
-		logLoadedSet(plugins(), "plugin", Plugin::metadata);
+		PLUGINS.set(PluginLoader.toLoadedSet(loadedPlugins));
+		logLoadedSet(Cichlid.plugins(), "plugin", Plugin::metadata);
 
 		loadedPlugins.values().forEach(plugin -> plugin.impl.init());
 
 		logger.space();
 
 		logger.info("Loading mods...");
-		mods = ModLoader.load(loadedPlugins, instrumentation);
-		logLoadedSet(mods(), "mod", Mod::metadata);
+		MODS.set(ModLoader.load(loadedPlugins, instrumentation));
+		logLoadedSet(Cichlid.mods(), "mod", Mod::metadata);
 
 		loadedPlugins.values().forEach(plugin -> plugin.impl.afterModsLoaded());
 
 		EntrypointHelper.invoke(EarlySetupEntrypoint.class, EarlySetupEntrypoint.KEY, EarlySetupEntrypoint::earlySetup, true);
 
-		try {
-			transformer.setTransformerManager(loadSushiTransformers());
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to setup Sushi", e);
-		}
+		CichlidTransformer.initSushi(builder -> {
+			try {
+				loadSushiTransformers(builder);
+			} catch (IOException e) {
+				throw new RuntimeException("Failed to load Sushi transformers", e);
+			}
+		});
 
-		initialized = true;
+		INITIALIZED.set(null);
 		logger.info("Cichlid initialized!");
 
 		logger.space();
@@ -136,36 +127,13 @@ public class CichlidImpl {
 		logger.space();
 	}
 
-	@Nullable
-	private static IMappingFile readMappings(boolean reverse) {
-		Path file = CichlidPaths.CICHLID_ROOT.resolve(".meta").resolve("mappings.txt");
-		if (!Files.exists(file)) {
-			logger.info("No mappings found, proceeding without them");
-			return null;
-		}
-
-		try {
-			logger.info("Loading mappings...");
-			long start = System.currentTimeMillis();
-			IMappingFile mappings = IMappingFile.load(file.toFile());
-			long seconds = (System.currentTimeMillis() - start) / 1000;
-			logger.info("Mappings successfully loaded in " + seconds + " second(s)");
-			return reverse ? mappings.reverse() : mappings;
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to read mappings", e);
-		}
-	}
-
-	private static TransformerManager loadSushiTransformers() throws IOException {
+	private static void loadSushiTransformers(TransformerManager.Builder builder) throws IOException {
 		Path output = CichlidPaths.CICHLID_ROOT.resolve(".sushi").resolve("output");
 		FileUtils.deleteRecursively(output);
 		Files.createDirectories(output);
 
-		TransformerManager.Builder builder = TransformerManager.builder();
-		builder.output(output);
-
-		for (Mod mod : mods()) {
-			if (!mod.resources().isPresent())
+		for (Mod mod : Cichlid.mods()) {
+			if (mod.resources().isEmpty())
 				continue;
 
 			Path transformers = mod.resources().get().resolve("transformers");
@@ -181,16 +149,14 @@ public class CichlidImpl {
 				try {
 					Id id = new Id(mod.metadata().id(), withoutExtension);
 					JsonValue json = TinyJson.parse(file);
-					builder.parseAndRegister(id, json).ifPresent(error -> {
-						throw new RuntimeException("Failed to register Sushi transformer " + id + ": " + error);
-					});
+					// builder.parseAndRegister(id, json).ifPresent(error -> {
+					// 	throw new RuntimeException("Failed to register Sushi transformer " + id + ": " + error);
+					// });
 				} catch (Id.InvalidException e) {
 					throw new RuntimeException("Sushi transformer in mod " + mod.metadata().blame() + " has an invalid name", e);
 				}
 			});
 		}
-
-		return builder.build();
 	}
 
 	private static <T> void logLoadedSet(LoadedSet<T> set, String type, Function<T, Metadata> metadata) {
@@ -209,30 +175,39 @@ public class CichlidImpl {
 		}
 	}
 
-	private static void readVersion() {
-		// read version
-		InputStream stream = CichlidImpl.class.getClassLoader().getResourceAsStream("cichlid_version.txt");
+	private static Version readVersion() throws IOException {
+		InputStream stream = classLoader.getResourceAsStream(CICHLID_VERSION_FILE);
+
 		if (stream == null) {
-			throw new RuntimeException("Cichlid version is missing");
+			throw new IllegalStateException(CICHLID_VERSION_FILE + " was not found");
 		}
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-			String string = reader.readLine().trim();
-			if (string.equals("${version}")) {
-				throw new RuntimeException("Cichlid version is not set");
-			}
-			version = Version.of(string);
-		} catch (IOException e) {
-			throw new RuntimeException("Error reading Cichlid version", e);
+		try (InputStreamReader reader = new InputStreamReader(stream)) {
+			String content = reader.readAllAsString();
+			return Version.of(content);
 		}
 	}
 
-	private static CichlidArgs parseArguments(@Nullable String args) {
-		CichlidArgs parsed = CichlidArgs.parse(args);
-		if (parsed == null) {
-			throw new RuntimeException("Cichlid is not installed properly! Invalid arguments: " + args);
+	private static Distribution detectDistribution() {
+		try {
+			Class.forName(CLIENT_MAIN, false, classLoader);
+			return Distribution.CLIENT;
+		} catch (ClassNotFoundException _) {
+			return Distribution.DEDICATED_SERVER;
+		}
+	}
+
+	private static Version detectMinecraftVersion() throws IOException {
+		InputStream stream = classLoader.getResourceAsStream(MINECRAFT_VERSION_FILE);
+		if (stream == null) {
+			throw new IOException("Minecraft version file is missing");
 		}
 
-		return parsed;
+		try (InputStreamReader reader = new InputStreamReader(stream)) {
+			JsonString string = TinyJson.parse(reader).asObject().getOrThrow("id").asString();
+			return Version.of(string.value());
+		} catch (JsonException e) {
+			throw new IOException("Failed to parse Minecraft version file", e);
+		}
 	}
 }

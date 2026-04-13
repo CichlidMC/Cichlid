@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-public class LoadedSetImpl<T> extends AbstractCollection<T> implements LoadedSet<T> {
+public final class LoadedSetImpl<T> extends AbstractCollection<T> implements LoadedSet<T> {
 	private final Map<String, T> byId;
 
 	public LoadedSetImpl(Map<String, T> byId) {

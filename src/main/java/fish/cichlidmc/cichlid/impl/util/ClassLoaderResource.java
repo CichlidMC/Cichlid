@@ -1,11 +1,12 @@
 package fish.cichlidmc.cichlid.impl.util;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public final class ClassLoaderResource<T> {
 	private final T boot;
@@ -16,6 +17,10 @@ public final class ClassLoaderResource<T> {
 		this.factory = factory;
 		this.boot = factory.apply(null);
 		this.map = Collections.synchronizedMap(new HashMap<>());
+	}
+
+	public ClassLoaderResource(Supplier<T> factory) {
+		this(_ -> factory.get());
 	}
 
 	public T get(@Nullable ClassLoader loader) {

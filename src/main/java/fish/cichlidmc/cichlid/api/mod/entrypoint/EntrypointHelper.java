@@ -7,7 +7,6 @@ import fish.cichlidmc.cichlid.impl.logging.CichlidLogger;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  * Utilities for invoking class-style entrypoints.
@@ -34,7 +33,7 @@ public final class EntrypointHelper {
 	 * @param log if true, a message will be logged before and after invoking
 	 * @throws EntrypointException in the case of any exception during the consumer, or a type mismatch
 	 */
-	public static <T> void invoke(Class<T> clazz, String key, BiConsumer<T, Mod> consumer, boolean log) {
+	public static <T> void invoke(Class<T> clazz, String key, BiConsumer<T, Mod> consumer, boolean log) throws EntrypointException {
 		invokeSafe(clazz, key, consumer, log, exception -> {
 			throw exception;
 		});
@@ -49,7 +48,7 @@ public final class EntrypointHelper {
 									  Consumer<EntrypointException> errorConsumer) {
 		List<Mod> list = Cichlid.mods().stream()
 				.filter(mod -> mod.metadata().entrypoints().contains(key))
-				.collect(Collectors.toList());
+				.toList();
 
 		if (list.isEmpty())
 			return;

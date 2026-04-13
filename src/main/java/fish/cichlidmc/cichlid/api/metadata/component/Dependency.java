@@ -2,7 +2,7 @@ package fish.cichlidmc.cichlid.api.metadata.component;
 
 import fish.cichlidmc.cichlid.api.version.VersionPredicate;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 

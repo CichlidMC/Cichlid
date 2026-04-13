@@ -6,15 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class VersionImpl implements Version {
-	private final String string;
-	private final List<VersionComponent> components;
-
-	private VersionImpl(String string, List<VersionComponent> components) {
-		this.string = string;
-		this.components = components;
-	}
-
+public record VersionImpl(String string, List<VersionComponent> components) implements Version {
 	@Override
 	public int compareTo(@NotNull Version o) {
 		return FlexVerComparator.compare(this.components, ((VersionImpl) o).components);
@@ -27,7 +19,12 @@ public class VersionImpl implements Version {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof VersionImpl && ((VersionImpl) obj).string.equals(this.string);
+		return obj instanceof VersionImpl that && this.string.equals(that.string);
+	}
+
+	@Override
+	public int hashCode() {
+		return this.string.hashCode();
 	}
 
 	public static Version of(String string) {

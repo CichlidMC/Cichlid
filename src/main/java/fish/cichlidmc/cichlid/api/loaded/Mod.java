@@ -1,7 +1,7 @@
 package fish.cichlidmc.cichlid.api.loaded;
 
 import fish.cichlidmc.cichlid.api.metadata.ModMetadata;
-import org.jetbrains.annotations.ApiStatus;
+import fish.cichlidmc.cichlid.impl.loaded.ModImpl;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -9,8 +9,8 @@ import java.util.Optional;
 /**
  * A mod loaded by a Cichlid plugin.
  */
-@ApiStatus.NonExtendable
-public interface Mod {
+public sealed interface Mod extends Loadable permits ModImpl {
+	@Override
 	ModMetadata metadata();
 
 	/**

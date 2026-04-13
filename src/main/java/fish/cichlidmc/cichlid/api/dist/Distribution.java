@@ -1,23 +1,29 @@
 package fish.cichlidmc.cichlid.api.dist;
 
-import fish.cichlidmc.tinycodecs.Codec;
-import org.jetbrains.annotations.Nullable;
+import fish.cichlidmc.tinycodecs.api.codec.Codec;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
+/// The two distributions of Minecraft.
 public enum Distribution {
-	CLIENT, DEDICATED_SERVER;
+	CLIENT("Client"),
+	DEDICATED_SERVER("Dedicated Server");
 
-	public static final Codec<Distribution> CODEC = Codec.byName(Distribution.class, dist -> dist.name);
+	public static final Codec<Distribution> CODEC = Codec.byName(Distribution.class, dist -> dist.serializedName);
 
-	/**
-	 * The snake_case name of this distribution.
-	 */
-	public final String name = this.name().toLowerCase(Locale.ROOT);
+	public final String prettyName;
+	/// The name of this distribution in snake_case, for use in serialization.
+	public final String serializedName;
+
+	Distribution(String prettyName) {
+		this.prettyName = prettyName;
+		this.serializedName = this.name().toLowerCase(Locale.ROOT);
+	}
 
 	@Override
 	public String toString() {
-		return this.name;
+		return this.prettyName;
 	}
 
 	/**
@@ -25,12 +31,10 @@ public enum Distribution {
 	 */
 	@Nullable
 	public static Distribution of(String name) {
-		if ("client".equals(name)) {
-			return CLIENT;
-		} else if ("dedicated_server".equals(name)) {
-			return DEDICATED_SERVER;
-		} else {
-			return null;
-		}
+		return switch(name) {
+			case "client" -> CLIENT;
+			case "dedicated_server" -> DEDICATED_SERVER;
+			default -> null;
+		};
 	}
 }

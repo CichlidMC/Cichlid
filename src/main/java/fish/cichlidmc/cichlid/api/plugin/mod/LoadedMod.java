@@ -3,7 +3,7 @@ package fish.cichlidmc.cichlid.api.plugin.mod;
 import fish.cichlidmc.cichlid.api.loaded.Mod;
 import fish.cichlidmc.cichlid.impl.loaded.LoadedModImpl;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Path;

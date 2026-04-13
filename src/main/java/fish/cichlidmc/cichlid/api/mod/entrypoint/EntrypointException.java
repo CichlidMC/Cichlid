@@ -5,7 +5,7 @@ import fish.cichlidmc.cichlid.api.loaded.Mod;
 /**
  * An exception thrown during entrypoint invocation.
  */
-public class EntrypointException extends RuntimeException {
+public final class EntrypointException extends RuntimeException {
 	public final String key;
 	public final Mod mod;
 

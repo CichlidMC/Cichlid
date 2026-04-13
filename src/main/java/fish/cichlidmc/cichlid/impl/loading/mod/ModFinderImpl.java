@@ -40,7 +40,7 @@ public class ModFinderImpl implements ModFinder {
 
 	public Set<Path> find() throws IOException {
 		Set<Path> mods = new HashSet<>(this.files);
-		Version mcVersion = Cichlid.mcVersion();
+		Version mcVersion = Cichlid.minecraftVersion();
 
 		for (Path directory : this.directories) {
 			Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {

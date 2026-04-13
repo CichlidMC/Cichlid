@@ -1,19 +1,14 @@
 plugins {
-    id("java")
+    java
 }
 
-base.archivesName = "CichlidTestPlugin"
 group = "fish.cichlidmc"
-version = properties["version"]!!
-
-repositories {
-    mavenCentral()
-}
+version = "1.0.0"
 
 dependencies {
     implementation(project(":"))
 }
 
-tasks.named("jar", Jar::class).configure {
+tasks.jar {
     archiveExtension = "clp"
 }

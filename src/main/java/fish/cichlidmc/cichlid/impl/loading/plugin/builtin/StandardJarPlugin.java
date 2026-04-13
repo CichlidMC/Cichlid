@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -34,7 +34,7 @@ public enum StandardJarPlugin implements CichlidPlugin {
 			ID, "Cichlid Standard Plugin", Cichlid.version(),
 			"Built-in plugin for loading standard " + EXTENSION + " Cichlid mods",
 			Utils.mapOf("CichlidMC", "Author"),
-			Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
+			Map.of(), Map.of(), Map.of(),
 			StandardJarPlugin.class.getName()
 	);
 

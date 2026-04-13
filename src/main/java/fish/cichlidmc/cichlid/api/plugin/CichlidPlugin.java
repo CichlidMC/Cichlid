@@ -2,7 +2,7 @@ package fish.cichlidmc.cichlid.api.plugin;
 
 import fish.cichlidmc.cichlid.api.Cichlid;
 import fish.cichlidmc.cichlid.api.plugin.mod.LoadableMod;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 

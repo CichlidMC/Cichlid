@@ -1,6 +1,6 @@
 package fish.cichlidmc.cichlid.impl.version.parser;
 
-import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
+import fish.cichlidmc.cichlid.api.version.VersionPredicate;
 import fish.cichlidmc.cichlid.impl.util.Utils;
 import fish.cichlidmc.cichlid.impl.version.parser.token.BooleanOperatorToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.ParenthesisToken;
@@ -49,7 +49,7 @@ public class VersionPredicateTokenizer {
 			// not a constant token, read a version
 			Token prev = previous(tokens);
 			if (!(prev instanceof VersionOperatorToken)) {
-				throw new VersionPredicateSyntaxException("Expected operator before version at index " + i, string);
+				throw VersionPredicate.SyntaxException.of("Expected operator before version at index " + i, string);
 			}
 
 			// read ahead to find the end of the version

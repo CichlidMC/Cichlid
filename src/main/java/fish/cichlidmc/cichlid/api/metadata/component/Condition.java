@@ -1,7 +1,7 @@
 package fish.cichlidmc.cichlid.api.metadata.component;
 
 import fish.cichlidmc.cichlid.api.Cichlid;
-import fish.cichlidmc.tinycodecs.map.MapCodec;
+import fish.cichlidmc.tinycodecs.api.codec.map.MapCodec;
 import org.jetbrains.annotations.ApiStatus;
 
 /**

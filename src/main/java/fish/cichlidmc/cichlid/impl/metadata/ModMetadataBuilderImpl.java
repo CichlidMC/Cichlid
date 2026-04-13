@@ -7,17 +7,22 @@ import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
 import fish.cichlidmc.cichlid.api.plugin.ModMetadataBuilder;
 import fish.cichlidmc.cichlid.api.version.Version;
 import fish.cichlidmc.cichlid.impl.metadata.component.EntrypointsImpl;
-import fish.cichlidmc.cichlid.impl.util.Utils;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ModMetadataBuilderImpl implements ModMetadataBuilder {
+	@Nullable
 	private String id;
+	@Nullable
 	private String name;
+	@Nullable
 	private Version version;
+	@Nullable
 	private String description;
 
 	private final Map<String, List<String>> entrypoints = new HashMap<>();
@@ -56,7 +61,7 @@ public class ModMetadataBuilderImpl implements ModMetadataBuilder {
 
 	@Override
 	public ModMetadataBuilder entrypoint(String key, String value) {
-		List<String> values = this.entrypoints.computeIfAbsent(key, $ -> new ArrayList<>());
+		List<String> values = this.entrypoints.computeIfAbsent(key, _ -> new ArrayList<>());
 		values.add(value);
 		return this;
 	}
@@ -87,10 +92,10 @@ public class ModMetadataBuilderImpl implements ModMetadataBuilder {
 
 	@Override
 	public ModMetadata build() {
-		String id = Utils.getOrThrow(this.id, "ID has not been set");
-		String name = Utils.getOrThrow(this.name, "Name has not been set");
-		Version version = Utils.getOrThrow(this.version, "Version has not been set");
-		String description = Utils.getOrThrow(this.description, "Description has not been set");
+		String id = Objects.requireNonNull(this.id, "ID has not been set");
+		String name = Objects.requireNonNull(this.name, "Name has not been set");
+		Version version = Objects.requireNonNull(this.version, "Version has not been set");
+		String description = Objects.requireNonNull(this.description, "Description has not been set");
 
 		return new ModMetadataImpl(
 				id, name, version, description,

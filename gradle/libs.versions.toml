@@ -1,0 +1,33 @@
+[versions]
+shadow = "9.4.0"
+
+jspecify = "1.0.0"
+jetbrains-annotations = "24.1.0"
+sushi = "0.2.0"
+
+log4j = "2.23.1"
+
+junit = "6.0.1"
+
+[libraries]
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+sushi = { module = "fish.cichlidmc:sushi", version.ref = "sushi" }
+
+# no versions, pulled in by sushi
+tiny-codecs = { module = "fish.cichlidmc:tiny-codecs" }
+tiny-json = { module = "fish.cichlidmc:tiny-json" }
+fishflakes = { module = "fish.cichlidmc:fishflakes" }
+
+log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
+
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+
+[bundles]
+annotations = [ "jspecify", "jetbrains-annotations" ]
+shadowed = [ "sushi", "tiny-codecs", "tiny-json", "fishflakes" ]
+junit = [ "junit-jupiter", "junit-launcher" ]
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

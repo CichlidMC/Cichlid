@@ -1,7 +1,6 @@
 package fish.cichlidmc.cichlid.test;
 
 import fish.cichlidmc.cichlid.api.version.VersionPredicate;
-import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import org.junit.jupiter.api.Test;
 
 import static fish.cichlidmc.cichlid.test.MoreAssertions.assertThrowsWithMessage;
@@ -176,7 +175,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testEmpty() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"Version predicate cannot be empty",
 				() -> VersionPredicate.parse("   ")
 		);
@@ -185,7 +184,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testExtraOpeningParenthesis() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"More opening parentheses than closing ones: (>1.4 && !=1.4.2) || (==22w14a",
 				() -> VersionPredicate.parse("(>1.4 && !=1.4.2) || (==22w14a")
 		);
@@ -194,7 +193,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testSwappedParentheses() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"Closing/opening parenthesis mismatch: )>1.4 && !=1.4.2(",
 				() -> VersionPredicate.parse(")>1.4 && !=1.4.2(")
 		);
@@ -203,7 +202,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testParenthesesMiscountOpen() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"More opening parentheses than closing ones: ((>1.4 && !=1.4.2)",
 				() -> VersionPredicate.parse("((>1.4 && !=1.4.2)")
 		);
@@ -212,7 +211,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testParenthesesMiscountClose() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"Closing/opening parenthesis mismatch: (>1.4 && !=1.4.2))",
 				() -> VersionPredicate.parse("(>1.4 && !=1.4.2))")
 		);
@@ -221,7 +220,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testExtraBooleanOp() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"Cannot merge boolean ops: even number of tokens: >1.4 && !=1.4.2 &&",
 				() -> VersionPredicate.parse(">1.4 && !=1.4.2 &&")
 		);
@@ -230,7 +229,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testMissingBooleanOp() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"Cannot merge boolean ops: even number of tokens: >1.4 !=1.4.2",
 				() -> VersionPredicate.parse(">1.4 !=1.4.2")
 		);
@@ -239,7 +238,7 @@ public class VersionPredicateTests {
 	@Test
 	public void testGarbage() {
 		assertThrowsWithMessage(
-				VersionPredicateSyntaxException.class,
+				VersionPredicate.SyntaxException.class,
 				"Expected operator before version at index 1: (dflfdn>===!=<,aazsd11!!",
 				() -> VersionPredicate.parse("(dflfdn>===!=<,aazsd11!!")
 		);

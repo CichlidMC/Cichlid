@@ -1,8 +1,8 @@
 package fish.cichlidmc.cichlid.impl.metadata.component.condition;
 
 import fish.cichlidmc.cichlid.api.metadata.component.Condition;
-import fish.cichlidmc.tinycodecs.Codec;
-import fish.cichlidmc.tinycodecs.map.MapCodec;
+import fish.cichlidmc.tinycodecs.api.codec.Codec;
+import fish.cichlidmc.tinycodecs.api.codec.map.MapCodec;
 
 import java.util.List;
 

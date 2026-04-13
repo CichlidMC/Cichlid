@@ -1,109 +1,117 @@
 package fish.cichlidmc.cichlid.impl.transformer;
 
-import fish.cichlidmc.cichlid.impl.transformer.remap.MinecraftRemapper;
-import fish.cichlidmc.cichlid.impl.transformer.remap.ReadingClassProvider;
-import fish.cichlidmc.cichlid.impl.transformer.remap.RemappedClass;
-import fish.cichlidmc.cichlid.impl.util.ClassLoaderResource;
+import fish.cichlidmc.cichlid.impl.logging.CichlidLogger;
+import fish.cichlidmc.sushi.api.TransformResult;
 import fish.cichlidmc.sushi.api.TransformerManager;
-import net.neoforged.srgutils.IMappingFile;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.tree.ClassNode;
+import fish.cichlidmc.sushi.api.requirement.Requirements;
+import fish.cichlidmc.sushi.api.util.ClassDescs;
+import org.jspecify.annotations.Nullable;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFile.ClassHierarchyResolverOption;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
 import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-public final class CichlidTransformer implements ClassFileTransformer {
-	public static final List<String> JAVA_PACKAGES = Arrays.asList("java/", "jdk/", "sun/", "javax/");
+public enum CichlidTransformer implements ClassFileTransformer {
+	INSTANCE;
 
+	public static final List<String> JAVA_PACKAGES = List.of("java/", "jdk/", "sun/", "javax/");
+	public static final List<String> MINECRAFT_PACKAGES = List.of("net/minecraft/", "com/mojang/");
+
+	private static final CichlidLogger logger = CichlidLogger.get(CichlidTransformer.class);
+	private static final ScopedValue<Optional<ClassLoader>> currentClassLoader = ScopedValue.newInstance();
 	private static boolean stopped = false;
 
 	@Nullable
-	private final MinecraftRemapper remapper;
-	private final ClassLoaderResource<SuperclassLookup> superclassLookups;
-	private final ClassLoaderResource<ReadingClassProvider> classProviders;
-
-	private TransformerManager manager;
-
-	private CichlidTransformer(@Nullable IMappingFile mappings) {
-		this.remapper = mappings == null ? null : new MinecraftRemapper(mappings);
-		this.superclassLookups = new ClassLoaderResource<>(SuperclassLookup::new);
-		this.classProviders = new ClassLoaderResource<>(ReadingClassProvider::new);
-	}
+	private static TransformerManager sushiManager;
 
 	@Override
-	public byte[] transform(@Nullable ClassLoader loader, @Nullable String name, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
-		// don't transform unnamed classes, gets weird
-		// if transforming was emergency stopped, do nothing
-		// don't transform classes from Java itself, opens too many cans of worms
-		// don't let mods transform Cichlid itself for the sake of stability. If you're a disgruntled modder reading this line, sorry, but please open an issue or PR!
+	public byte @Nullable [] transform(@Nullable ClassLoader loader, @Nullable String name, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
+		// - don't transform unnamed classes, gets weird
+		// - if transforming was emergency stopped, do nothing
+		// - don't transform classes from Java itself, opens too many cans of worms
+		// - don't let mods transform Cichlid itself for the sake of stability. If you're a disgruntled modder reading this line, sorry, but please open an issue or PR!
 		if (name == null || stopped || isJavaClass(name) || name.startsWith("io/github/cichlidmc/cichlid/"))
 			return null;
 
-		try {
-			return this.transformSafe(loader, name, bytes);
-		} catch (Throwable t) {
-			return ClassPoisoner.poison(name, bytes, t);
-		}
-	}
-
-	private byte[] transformSafe(@Nullable ClassLoader loader, String name, byte[] bytes) {
-		if (this.remapper != null) {
-			ReadingClassProvider provider = this.classProviders.get(loader);
-			RemappedClass remapped = this.remapper.remap(provider, name, bytes);
-			if (remapped != null) {
-				byte[] transformed = this.transformRemapped(loader, remapped.name, remapped.bytes);
-				return transformed == null ? remapped.bytes : null;
-			}
-		}
-
-		return this.transformRemapped(loader, name, bytes);
-	}
-
-	private byte[] transformRemapped(@Nullable ClassLoader loader, String name, byte[] bytes) {
-		// best-effort check for Minecraft classes loading too early
-		if (this.manager == null && (name.startsWith("net/minecraft") || name.startsWith("com/mojang"))) {
-			throw new RuntimeException("Tried to load a Minecraft class too early: " + name);
-		}
-
-		ClassReader reader = new ClassReader(bytes);
-		ClassNode node = new ClassNode();
-		reader.accept(node, 0);
-
-		boolean transformed = EnvironmentStripper.strip(node);
-		if (this.manager != null) {
-			transformed |= this.manager.transform(node, reader);
-		}
-
-		// if no transformations were applied, then skip writing
-		if (!transformed)
+		Optional<ClassDesc> maybeDesc = parseDesc(name);
+		if (maybeDesc.isEmpty()) {
+			// invalid class name for some reason. nothing we can really do here
+			logger.warn("Failed to parse class name into a desc: " + name);
 			return null;
-
-		SuperclassLookup lookup = this.superclassLookups.get(loader);
-		ClassWriter writer = new LookupUsingClassWriter(reader, ClassWriter.COMPUTE_FRAMES, lookup);
-		node.accept(writer);
-		return writer.toByteArray();
-	}
-
-	@ApiStatus.Internal
-	public void setTransformerManager(TransformerManager manager) {
-		if (this.manager != null) {
-			throw new IllegalStateException("TransformerManager is already set!");
 		}
 
-		this.manager = manager;
+		ClassDesc desc = maybeDesc.get();
+
+		try {
+			return this.transformSafe(loader, desc, bytes).orElse(null);
+		} catch (Throwable t) {
+			CichlidClassLoadCallbacks.registerException(loader, desc, t);
+			logger.error("Unhandled exception while transforming class " + desc);
+			logger.throwable(t);
+			return null;
+		}
+	}
+
+	private Optional<byte[]> transformSafe(@Nullable ClassLoader loader, ClassDesc name, byte[] bytes) {
+		if (sushiManager == null) {
+			// best-effort check for Minecraft classes loading too early
+			if (isMinecraftClass(name)) {
+				throw new RuntimeException("Tried to load a Minecraft class too early: " + name);
+			}
+
+			return Optional.empty();
+		}
+
+		Optional<TransformResult> maybeResult = ScopedValue.where(currentClassLoader, Optional.ofNullable(loader)).call(
+				() -> sushiManager.transform(bytes, name)
+		);
+
+		if (maybeResult.isEmpty()) {
+			return Optional.empty();
+		}
+
+		TransformResult result = maybeResult.get();
+		Requirements requirements = result.requirements();
+		if (requirements.isEmpty()) {
+			return Optional.of(result.bytes());
+		}
+
+		// there's requirements to check. we can't check them now, because we're in the middle of transforming a class.
+		// we need to inject a callback into the head of class init to check them then.
+		ClassFile classFile = sushiManager.classFile().get();
+		ClassModel transformedModel = classFile.parse(result.bytes());
+		byte[] newBytes = classFile.transformClass(transformedModel, new CichlidClassLoadCallbacks.Injector());
+
+		// only do this after transforming to make sure it didn't fail
+		CichlidClassLoadCallbacks.registerRequirements(loader, name, requirements);
+
+		return Optional.of(newBytes);
+	}
+
+	public static void initSushi(Consumer<TransformerManager.Builder> consumer) {
+		if (sushiManager != null) {
+			throw new IllegalStateException("Sushi has already been initialized");
+		}
+
+		TransformerManager.Builder builder = TransformerManager.builder();
+		builder.addClassFileOption(ClassHierarchyResolverOption.of(createHierarchyResolver()));
+
+		consumer.accept(builder);
+		sushiManager = builder.build();
 	}
 
 	public static void emergencyStop() {
 		stopped = true;
 	}
 
-	public static boolean isJavaClass(String name) {
+	private static boolean isJavaClass(String name) {
 		for (String pkg : JAVA_PACKAGES) {
 			if (name.startsWith(pkg)) {
 				return true;
@@ -112,9 +120,32 @@ public final class CichlidTransformer implements ClassFileTransformer {
 		return false;
 	}
 
-	public static CichlidTransformer setup(@Nullable IMappingFile mappings, Instrumentation instrumentation) {
-		CichlidTransformer transformer = new CichlidTransformer(mappings);
-		instrumentation.addTransformer(transformer);
-		return transformer;
+	private static boolean isMinecraftClass(ClassDesc name) {
+		for (String pkg : MINECRAFT_PACKAGES) {
+			if (name.packageName().startsWith(pkg)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static Optional<ClassDesc> parseDesc(String name) {
+		try {
+			return Optional.of(ClassDesc.ofInternalName(name));
+		} catch (IllegalArgumentException ignored) {
+			return Optional.empty();
+		}
+	}
+
+	private static ClassHierarchyResolver createHierarchyResolver() {
+		return ClassHierarchyResolver.ofResourceParsing(desc -> {
+			ClassLoader loader = currentClassLoader.orElseThrow(
+					() -> new IllegalStateException("Current ClassLoader is not set")
+			).orElseGet(CichlidTransformer.class::getClassLoader);
+
+			String path = ClassDescs.fullName(desc).replace('.', '/') + ".class";
+			return loader.getResourceAsStream(path);
+		}).cached();
 	}
 }

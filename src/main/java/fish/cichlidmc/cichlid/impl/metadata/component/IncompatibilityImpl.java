@@ -3,7 +3,6 @@ package fish.cichlidmc.cichlid.impl.metadata.component;
 import fish.cichlidmc.cichlid.api.metadata.component.Condition;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
 import fish.cichlidmc.cichlid.api.version.VersionPredicate;
-import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.metadata.component.condition.ConditionRegistry;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.value.composite.JsonObject;
@@ -45,13 +44,13 @@ public class IncompatibilityImpl implements Incompatibility {
 	}
 
 	public static Incompatibility parse(String id, JsonObject json) throws JsonException {
-		JsonString predicateJson = json.get("predicate").asString();
-		String reason = json.get("reason").asString().value();
-		Collection<Condition> conditions = ConditionRegistry.parse(json.getNullable("conditions"));
+		JsonString predicateJson = json.getOrThrow("predicate").asString();
+		String reason = json.getOrThrow("reason").asString().value();
+		Collection<Condition> conditions = ConditionRegistry.parse(json.get("conditions"));
 		try {
 			VersionPredicate parsed = VersionPredicate.parse(predicateJson.value());
 			return new IncompatibilityImpl(id, parsed, reason, conditions);
-		} catch (VersionPredicateSyntaxException e) {
+		} catch (VersionPredicate.SyntaxException e) {
 			throw new JsonException(predicateJson, e.getMessage());
 		}
 	}

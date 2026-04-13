@@ -1,44 +1,30 @@
 plugins {
-    id("com.gradleup.shadow") version "8.3.6"
-    id("java-library")
-    id("maven-publish")
+    `java-library`
+    `maven-publish`
+    alias(libs.plugins.shadow)
 }
 
 group = "fish.cichlidmc"
-version = "0.3.2"
+version = "0.4.0"
 
-allprojects {
-    repositories {
-        mavenCentral()
-        maven("https://mvn.devos.one/releases/")
-    }
-}
-
-// configuration for shadowed dependencies
+// configurations for shadowed dependencies
 val shade: Configuration by configurations.creating
 
 dependencies {
-    compileOnlyApi("org.jetbrains:annotations:24.1.0")
-    shade(api("fish.cichlidmc:tiny-json:1.0.1")!!)
-    shade(api("fish.cichlidmc:sushi:0.1.0")!!)
-    shade(api("org.ow2.asm:asm-tree:9.7")!!)
+    compileOnlyApi(libs.bundles.annotations)
+    api(libs.sushi)
+    shade(libs.bundles.shadowed)
 
-    compileOnly("org.apache.logging.log4j:log4j-api:2.23.1")
-    shade(implementation("net.neoforged:AutoRenamingTool:2.0.3")!!)
-    shade(implementation("org.ow2.asm:asm-commons:9.7")!!)
+    compileOnly(libs.log4j.api)
 
-    // for validating ASM injections
-//    implementation("org.ow2.asm:asm-analysis:9.7")
-
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    testImplementation(libs.bundles.junit)
 }
 
-tasks.named<Test>("test") {
+tasks.test {
     useJUnitPlatform()
 }
 
-tasks.named("processResources", ProcessResources::class) {
+tasks.processResources {
     val properties = mapOf(
         "version" to version.toString()
     )
@@ -50,35 +36,17 @@ tasks.named("processResources", ProcessResources::class) {
     }
 }
 
-// dummy sourceSets for features. Contents are manged by jar task configuration below.
-val modApi: SourceSet by sourceSets.creating
-val pluginApi: SourceSet by sourceSets.creating
-
 java {
     withSourcesJar()
-
-    registerFeature("modApi") {
-        withSourcesJar()
-        usingSourceSet(modApi)
-    }
-
-    registerFeature("pluginApi") {
-        withSourcesJar()
-        usingSourceSet(pluginApi)
-    }
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
-// jar: dependencies not bundled, for impl access and dev runtime
-// shadowJar: prod, dependencies bundled, for distribution
-// modApiJar: mod-api, for mods at compile time
-// pluginApiJar: plugin-api, for plugins at compile time
-
-tasks.named<Jar>("jar") {
+tasks.jar {
     manifest.attributes["Premain-Class"] = "fish.cichlidmc.cichlid.impl.CichlidAgent"
     manifest.attributes["Can-Retransform-Classes"] = "true"
 }
 
-tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+tasks.shadowJar {
     archiveClassifier = "prod"
     configurations = listOf(shade)
     manifest.attributes["Premain-Class"] = "fish.cichlidmc.cichlid.impl.CichlidAgent"
@@ -87,47 +55,12 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     // exclude signatures and manifest of dependencies
     exclude("META-INF/**")
 
-    relocate("net.neoforged", "fish.cichlidmc.cichlid.shadow.net.neoforged")
+    // I kinda need that, shadow...
+    excludes.remove("module-info.class")
 }
 
-tasks.named<Jar>("modApiJar") {
-    dependsOn("jar")
-    archiveClassifier = "mod-api"
-    from(zipTree(files(tasks.named("jar")).singleFile))
-    exclude("fish/cichlidmc/cichlid/impl/**")
-    exclude("fish/cichlidmc/cichlid/api/plugin/**")
-    includeEmptyDirs = false
-}
-
-tasks.named<Jar>("modApiSourcesJar") {
-    dependsOn("sourcesJar")
-    archiveClassifier = "mod-api-sources"
-    from(zipTree(files(tasks.named("sourcesJar")).singleFile))
-    exclude("fish/cichlidmc/cichlid/impl/**")
-    exclude("fish/cichlidmc/cichlid/api/plugin/**")
-    includeEmptyDirs = false
-}
-
-tasks.named<Jar>("pluginApiJar") {
-    dependsOn("jar")
-    archiveClassifier = "plugin-api"
-    from(zipTree(files(tasks.named("jar")).singleFile))
-    exclude("fish/cichlidmc/cichlid/impl/**")
-    exclude("fish/cichlidmc/cichlid/api/mod/**")
-    includeEmptyDirs = false
-}
-
-tasks.named<Jar>("pluginApiSourcesJar") {
-    dependsOn("sourcesJar")
-    archiveClassifier = "plugin-api-sources"
-    from(zipTree(files(tasks.named("sourcesJar")).singleFile))
-    exclude("fish/cichlidmc/cichlid/impl/**")
-    exclude("fish/cichlidmc/cichlid/api/mod/**")
-    includeEmptyDirs = false
-}
-
-tasks.named("assemble").configure {
-    dependsOn("shadowJar", "modApiJar", "pluginApiJar")
+tasks.assemble {
+    dependsOn(tasks.shadowJar)
 }
 
 tasks.register("buildProd") {

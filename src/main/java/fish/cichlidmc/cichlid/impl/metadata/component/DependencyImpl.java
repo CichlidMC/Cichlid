@@ -3,12 +3,11 @@ package fish.cichlidmc.cichlid.impl.metadata.component;
 import fish.cichlidmc.cichlid.api.metadata.component.Condition;
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
 import fish.cichlidmc.cichlid.api.version.VersionPredicate;
-import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.metadata.component.condition.ConditionRegistry;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.value.composite.JsonObject;
 import fish.cichlidmc.tinyjson.value.primitive.JsonString;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -55,14 +54,14 @@ public class DependencyImpl implements Dependency {
 	}
 
 	public static Dependency parse(String id, JsonObject json) throws JsonException {
-		String name = json.get("name").asString().value();
-		JsonString predicateJson = json.get("predicate").asString();
+		String name = json.getOrThrow("name").asString().value();
+		JsonString predicateJson = json.getOrThrow("predicate").asString();
 		String source = json.getOptional("source").map(value -> value.asString().value()).orElse(null);
-		Collection<Condition> conditions = ConditionRegistry.parse(json.getNullable("conditions"));
+		Collection<Condition> conditions = ConditionRegistry.parse(json.get("conditions"));
 		try {
 			VersionPredicate parsed = VersionPredicate.parse(predicateJson.value());
 			return new DependencyImpl(id, name, parsed, source, conditions);
-		} catch (VersionPredicateSyntaxException e) {
+		} catch (VersionPredicate.SyntaxException e) {
 			throw new JsonException(predicateJson, e.getMessage());
 		}
 	}

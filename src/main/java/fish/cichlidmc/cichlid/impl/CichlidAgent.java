@@ -8,9 +8,8 @@ import fish.cichlidmc.cichlid.impl.report.ReportDetail;
 import fish.cichlidmc.cichlid.impl.report.ReportSection;
 import fish.cichlidmc.cichlid.impl.report.ReportedException;
 import fish.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
-import fish.cichlidmc.cichlid.impl.transformer.ClassPoisoner;
 import fish.cichlidmc.cichlid.impl.util.Utils;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +30,7 @@ public class CichlidAgent {
 	);
 
 	private static final List<Class<?>> criticalClasses = Utils.listOf(
-			CichlidLogger.class, CichlidTransformer.class, CatastropheLogger.class, ClassPoisoner.class,
+			CichlidLogger.class, CichlidTransformer.class, CatastropheLogger.class,
 			ProblemReport.class, ReportSection.class, ReportDetail.class, ReportedException.class
 	);
 

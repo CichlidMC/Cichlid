@@ -10,7 +10,7 @@ import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
+import java.util.Map;
 
 public final class ClasspathLoadableMod extends LoadableMod {
 	private final URI metadataLocation;
@@ -26,7 +26,7 @@ public final class ClasspathLoadableMod extends LoadableMod {
 		try {
 			// Paths.get(uri) throws if the filesystem isn't open.
 			// but newFileSystem throws if the filesystem *is* open.
-			FileSystems.newFileSystem(this.metadataLocation, Collections.emptyMap());
+			FileSystems.newFileSystem(this.metadataLocation, Map.of());
 		} catch (FileSystemAlreadyExistsException | IllegalArgumentException ignored) {
 			// catch IllegalArgumentException, since for some reason UnixFileSystem
 			// throws on newFileSystem for any path besides the root.

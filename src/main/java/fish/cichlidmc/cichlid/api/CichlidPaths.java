@@ -6,9 +6,9 @@ import java.nio.file.Paths;
 /**
  * Common paths used by Cichlid, mods, and plugins.
  */
-public class CichlidPaths {
+public final class CichlidPaths {
 	/**
-	 * Minecraft's root directory, usually ".minecraft"
+	 * Minecraft's root directory, colloquially ".minecraft"
 	 */
 	public static final Path MINECRAFT_ROOT = Paths.get("");
 	/**
@@ -31,4 +31,6 @@ public class CichlidPaths {
 	 * Files cached by Cichlid, ".minecraft/cichlid/.cache"
 	 */
 	public static final Path CACHE = CICHLID_ROOT.resolve(".cache");
+
+	private CichlidPaths() {}
 }

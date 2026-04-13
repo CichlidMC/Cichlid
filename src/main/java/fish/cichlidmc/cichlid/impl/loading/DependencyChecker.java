@@ -12,7 +12,7 @@ import fish.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import fish.cichlidmc.cichlid.impl.report.ProblemReport;
 import fish.cichlidmc.cichlid.impl.report.ReportDetail;
 import fish.cichlidmc.cichlid.impl.util.Utils;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;

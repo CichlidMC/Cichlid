@@ -3,15 +3,7 @@ package fish.cichlidmc.cichlid.impl.version.parser.impl;
 import fish.cichlidmc.cichlid.api.version.Version;
 import fish.cichlidmc.cichlid.api.version.VersionPredicate;
 
-public final class ParsedVersionPredicate implements VersionPredicate {
-	private final VersionPredicate wrapped;
-	private final String string;
-
-	public ParsedVersionPredicate(VersionPredicate wrapped, String string) {
-		this.wrapped = wrapped;
-		this.string = string;
-	}
-
+public record ParsedVersionPredicate(VersionPredicate wrapped, String string) implements VersionPredicate {
 	@Override
 	public boolean test(Version version) {
 		return this.wrapped.test(version);

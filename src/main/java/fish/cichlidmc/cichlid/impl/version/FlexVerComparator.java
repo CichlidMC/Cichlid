@@ -10,7 +10,6 @@ package fish.cichlidmc.cichlid.impl.version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -131,7 +130,7 @@ public class FlexVerComparator {
 	 */
 	// @VisibleForTesting
 	static List<VersionComponent> decompose(String str) {
-		if (str.isEmpty()) return Collections.emptyList();
+		if (str.isEmpty()) return List.of();
 		boolean lastWasNumber = isAsciiDigit(str.codePointAt(0));
 		int totalCodepoints = str.codePointCount(0, str.length());
 		int[] accum = new int[totalCodepoints];

@@ -1,7 +1,6 @@
 package fish.cichlidmc.cichlid.impl.version.parser;
 
 import fish.cichlidmc.cichlid.api.version.VersionPredicate;
-import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.util.Either;
 import fish.cichlidmc.cichlid.impl.util.IntRange;
 import fish.cichlidmc.cichlid.impl.util.Utils;
@@ -12,6 +11,7 @@ import fish.cichlidmc.cichlid.impl.version.parser.token.ParenthesisToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.Token;
 import fish.cichlidmc.cichlid.impl.version.parser.token.VersionOperatorToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.VersionToken;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,7 @@ public class VersionPredicateParser {
 		if (string.equals("any")) {
 			return AlwaysTrueVersionPredicate.INSTANCE;
 		} else if (string.isEmpty()) {
-			throw new VersionPredicateSyntaxException("Version predicate cannot be empty");
+			throw VersionPredicate.SyntaxException.ofEmpty("Version predicate cannot be empty");
 		}
 
 		List<Either<VersionPredicate, Token>> tokens = VersionPredicateTokenizer.tokenize(string)
@@ -60,11 +60,11 @@ public class VersionPredicateParser {
 		// && has precedence, same as java
 		List<Either<VersionPredicate, BooleanOperatorToken>> anded = evaluateBooleanOps(validated, BooleanOperatorToken.AND);
 		List<Either<VersionPredicate, BooleanOperatorToken>> ored = evaluateBooleanOps(anded, BooleanOperatorToken.OR);
-		if (ored.size() != 1 || ored.get(0).isRight()) {
+		if (ored.size() != 1 || ored.getFirst().isRight()) {
 			throw new RuntimeException("Something has gone very wrong");
 		}
 
-		return new ParsedVersionPredicate(ored.get(0).left(), string);
+		return new ParsedVersionPredicate(ored.getFirst().left(), string);
 	}
 
 	private static List<Either<VersionPredicate, Token>> simplifyParentheses(List<Either<VersionPredicate, Token>> tokens, String string) {
@@ -85,7 +85,7 @@ public class VersionPredicateParser {
 			} else if (token == ParenthesisToken.CLOSE) {
 				depth--;
 				if (depth < 0) {
-					throw new VersionPredicateSyntaxException("Closing/opening parenthesis mismatch", string);
+					throw VersionPredicate.SyntaxException.of("Closing/opening parenthesis mismatch", string);
 				} else if (depth == 0) {
 					// completed group
 					// openIndex can never be -1 here, if it was the depth < 0 would also be hit
@@ -96,7 +96,7 @@ public class VersionPredicateParser {
 		}
 
 		if (depth > 0) {
-			throw new VersionPredicateSyntaxException("More opening parentheses than closing ones", string);
+			throw VersionPredicate.SyntaxException.of("More opening parentheses than closing ones", string);
 		}
 
 		if (groups.isEmpty())
@@ -177,12 +177,11 @@ public class VersionPredicateParser {
 		return evaluated;
 	}
 
+	@Nullable
 	private static VersionPredicate matchSimplePattern(List<Either<VersionPredicate, Token>> tokens, int i) {
 		Either<VersionPredicate, Token> either = tokens.get(i);
 		Either<VersionPredicate, Token> next = Utils.nextOrNull(tokens, i);
-		if (either.isRight() && either.right() instanceof VersionOperatorToken && next != null && next.isRight() && next.right() instanceof VersionToken) {
-			VersionOperatorToken operator = (VersionOperatorToken) either.right();
-			VersionToken version = (VersionToken) next.right();
+		if (either.isRight() && either.right() instanceof VersionOperatorToken operator && next != null && next.isRight() && next.right() instanceof VersionToken version) {
 			return operator.createPredicate(version.version);
 		}
 		return null;
@@ -191,13 +190,13 @@ public class VersionPredicateParser {
 	private static List<Either<VersionPredicate, BooleanOperatorToken>> assertFullySimplified(List<Either<VersionPredicate, Token>> tokens, String string) {
 		if (tokens.size() % 2 == 0) {
 			// must be an odd number of tokens
-			throw new VersionPredicateSyntaxException("Cannot merge boolean ops: even number of tokens", string);
+			throw VersionPredicate.SyntaxException.of("Cannot merge boolean ops: even number of tokens", string);
 		}
 		// predicate, boolean op, predicate, boolean op, etc
 		for (int i = 0; i < tokens.size(); i++) {
 			Either<VersionPredicate, Token> either = tokens.get(i);
 			if (!isCorrectToken(i, either)) {
-				throw new VersionPredicateSyntaxException("Cannot merge boolean ops: must alternate between predicates and ops", string);
+				throw VersionPredicate.SyntaxException.of("Cannot merge boolean ops: must alternate between predicates and ops", string);
 			}
 		}
 		//noinspection unchecked

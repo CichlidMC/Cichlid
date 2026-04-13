@@ -2,7 +2,6 @@ package fish.cichlidmc.cichlid.impl.loading.mod;
 
 import fish.cichlidmc.cichlid.api.version.Version;
 import fish.cichlidmc.cichlid.api.version.VersionPredicate;
-import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -47,7 +46,7 @@ interface DirectoryBehavior {
 			try {
 				VersionPredicate parsed = VersionPredicate.parse(predicate);
 				return new ConditionalSearch(parsed);
-			} catch (VersionPredicateSyntaxException e) {
+			} catch (VersionPredicate.SyntaxException e) {
 				throw new IllegalStateException("Directory has invalid version predicate: " + dir, e);
 			}
 		} else {

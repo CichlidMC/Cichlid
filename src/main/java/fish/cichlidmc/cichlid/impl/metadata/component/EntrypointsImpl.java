@@ -1,7 +1,6 @@
 package fish.cichlidmc.cichlid.impl.metadata.component;
 
 import fish.cichlidmc.cichlid.api.metadata.component.Entrypoints;
-import fish.cichlidmc.cichlid.impl.util.Utils;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.value.JsonValue;
 import fish.cichlidmc.tinyjson.value.composite.JsonArray;
@@ -16,7 +15,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class EntrypointsImpl implements Entrypoints {
-	public static final Entrypoints EMPTY = new EntrypointsImpl(Collections.emptyMap());
+	public static final Entrypoints EMPTY = new EntrypointsImpl(Map.of());
 
 	private final Map<String, List<String>> map;
 
@@ -24,7 +23,7 @@ public class EntrypointsImpl implements Entrypoints {
 		Map<String, List<String>> newMap = new HashMap<>(map.size());
 		map.forEach((key, list) -> {
 			if (!list.isEmpty()) {
-				newMap.put(key, Utils.immutableCopy(list));
+				newMap.put(key, List.copyOf(list));
 			}
 		});
 		this.map = Collections.unmodifiableMap(newMap);
@@ -32,7 +31,7 @@ public class EntrypointsImpl implements Entrypoints {
 
 	@Override
 	public List<String> get(String key) {
-		return this.map.getOrDefault(key, Collections.emptyList());
+		return this.map.getOrDefault(key, List.of());
 	}
 
 	@Override

@@ -1,15 +1,10 @@
 plugins {
-    id("java")
-    id("application")
+    java
+    application
 }
 
-base.archivesName = "CichlidTestApp"
 group = "fish.cichlidmc"
-version = properties["version"]!!
-
-repositories {
-    mavenCentral()
-}
+version = "1.0.0"
 
 val agent: Configuration by configurations.creating { isTransitive = false }
 val plugin: Configuration by configurations.creating { isTransitive = false }
@@ -25,12 +20,12 @@ application {
     mainClass = "fish.cichlidmc.test_app.Main"
 }
 
-tasks.named("run", JavaExec::class) {
-    jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
+tasks.run {
+    //jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
     jvmArgs("-Xverify:all")
 
     agent.files.forEach {
-        val arg = "-javaagent:$it=dist=client,version=1.21.4"
+        val arg = "-javaagent:$it"
         jvmArgs(arg)
     }
 

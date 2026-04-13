@@ -1,6 +1,7 @@
 package fish.cichlidmc.cichlid.api.version;
 
 import fish.cichlidmc.cichlid.impl.version.parser.VersionPredicateParser;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.function.Predicate;
 
@@ -11,6 +12,7 @@ public interface VersionPredicate extends Predicate<Version> {
 	/**
 	 * Shortcut that parses a String into a Version for you.
 	 */
+	@ApiStatus.NonExtendable
 	default boolean test(String version) {
 		return this.test(Version.of(version));
 	}
@@ -41,9 +43,32 @@ public interface VersionPredicate extends Predicate<Version> {
 	 *     <li>{@code (>=0.5.1.a && <0.5.1.d) || >=0.5.1.f}</li>
 	 *     <li>{@code ==0.6.0-beta.2}</li>
 	 * </ul>
-	 * @throws VersionPredicateSyntaxException if the predicate is malformed
+	 * @throws SyntaxException if the predicate is malformed
 	 */
-	static VersionPredicate parse(String string) throws VersionPredicateSyntaxException {
+	static VersionPredicate parse(String string) throws SyntaxException {
 		return VersionPredicateParser.parse(string);
+	}
+
+	/**
+	 * Exception possibly thrown when parsing a version predicate.
+	 */
+	final class SyntaxException extends RuntimeException {
+		/**
+		 * The String that failed to be parsed into a {@link VersionPredicate}.
+		 */
+		public final String predicate;
+
+		private SyntaxException(String message, String predicate) {
+			super(message);
+			this.predicate = predicate;
+		}
+
+		public static SyntaxException ofEmpty(String message) {
+			return new SyntaxException(message, "");
+		}
+
+		public static SyntaxException of(String message, String predicate) {
+			return new SyntaxException(message + ": " + predicate, predicate);
+		}
 	}
 }

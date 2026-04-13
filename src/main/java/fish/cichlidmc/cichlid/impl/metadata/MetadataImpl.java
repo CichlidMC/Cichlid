@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-class MetadataImpl implements Metadata {
+public sealed class MetadataImpl implements Metadata permits ModMetadataImpl, PluginMetadata {
 	protected final String id;
 	protected final String name;
 	protected final Version version;
