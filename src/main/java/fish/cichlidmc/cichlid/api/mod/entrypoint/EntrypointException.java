@@ -2,9 +2,7 @@ package fish.cichlidmc.cichlid.api.mod.entrypoint;
 
 import fish.cichlidmc.cichlid.api.loaded.Mod;
 
-/**
- * An exception thrown during entrypoint invocation.
- */
+/// An exception thrown during entrypoint invocation.
 public final class EntrypointException extends RuntimeException {
 	public final String key;
 	public final Mod mod;

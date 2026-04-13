@@ -1,8 +1,6 @@
 package fish.cichlidmc.cichlid.impl.util;
 
-/**
- * Both min and max are inclusive
- */
+/// Both min and max are inclusive
 public class IntRange {
 	public final int min;
 	public final int max;

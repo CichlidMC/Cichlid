@@ -11,14 +11,10 @@ import fish.cichlidmc.tinyjson.TinyJson;
 import fish.cichlidmc.tinyjson.value.composite.JsonObject;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * Builder for a {@link ModMetadata}. All fields are required unless otherwise noted.
- */
+/// Builder for a [ModMetadata]. All fields are required unless otherwise noted.
 @ApiStatus.NonExtendable
 public interface ModMetadataBuilder {
-	/**
-	 * @throws IllegalArgumentException if the ID is not valid
-	 */
+	/// @throws IllegalArgumentException if the ID is not valid
 	ModMetadataBuilder id(String id);
 
 	ModMetadataBuilder name(String name);
@@ -27,48 +23,32 @@ public interface ModMetadataBuilder {
 
 	ModMetadataBuilder description(String description);
 
-	/**
-	 * Optional. Adds an entry to the entrypoints with the given key.
-	 */
+	/// Optional. Adds an entry to the entrypoints with the given key.
 	ModMetadataBuilder entrypoint(String key, String value);
 
-	/**
-	 * Optional. Adds an entry to the credits.
-	 */
+	/// Optional. Adds an entry to the credits.
 	ModMetadataBuilder credit(String name, String role);
 
-	/**
-	 * Optional. Adds a mod that this metadata provides.
-	 */
+	/// Optional. Adds a mod that this metadata provides.
 	ModMetadataBuilder provides(String id, Version version);
 
-	/**
-	 * Optional. Adds a dependency to this metadata.
-	 */
+	/// Optional. Adds a dependency to this metadata.
 	ModMetadataBuilder dependency(Dependency dependency);
 
-	/**
-	 * Optional. Adds an incompatibility to this metadata.
-	 */
+	/// Optional. Adds an incompatibility to this metadata.
 	ModMetadataBuilder incompatibility(Incompatibility incompatibility);
 
-	/**
-	 * Build this builder into a {@link ModMetadata}.
-	 * @throws IllegalArgumentException if any required fields were not set
-	 */
+	/// Build this builder into a [ModMetadata].
+	/// @throws IllegalArgumentException if any required fields were not set
 	ModMetadata build();
 
-	/**
-	 * Create a new empty builder.
-	 */
+	/// Create a new empty builder.
 	static ModMetadataBuilder create() {
 		return ModMetadataBuilderImpl.create();
 	}
 
-	/**
-	 * Parse mod metadata from the given JSON. See {@link TinyJson} for getting an instance of a {@link JsonObject}.
-	 * @throws JsonException if the JSON is not a valid {@link ModMetadata}.
-	 */
+	/// Parse mod metadata from the given JSON. See [TinyJson] for getting an instance of a [JsonObject].
+	/// @throws JsonException if the JSON is not a valid [ModMetadata].
 	static ModMetadata fromJson(JsonObject json) throws JsonException {
 		return ModMetadataImpl.fromJson(json);
 	}

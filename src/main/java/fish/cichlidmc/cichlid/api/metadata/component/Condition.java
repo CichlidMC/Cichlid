@@ -4,23 +4,17 @@ import fish.cichlidmc.cichlid.api.Cichlid;
 import fish.cichlidmc.tinycodecs.api.codec.map.MapCodec;
 import org.jetbrains.annotations.ApiStatus;
 
-/**
- * Conditions for dependencies and incompatibilities.
- */
+/// Conditions for dependencies and incompatibilities.
 @ApiStatus.NonExtendable
 public interface Condition {
 	boolean matches(Context context);
 
 	MapCodec<? extends Condition> codec();
 
-	/**
-	 * Context for Conditions, since they are queried while Cichlid is mid-initialization.
-	 */
+	/// Context for Conditions, since they are queried while Cichlid is mid-initialization.
 	@ApiStatus.NonExtendable
 	interface Context {
-		/**
-		 * Context object that may be used after Cichlid is fully initialized.
-		 */
+		/// Context object that may be used after Cichlid is fully initialized.
 		Context INITIALIZED = new Context() {
 			@Override
 			public boolean isPluginPresent(String id) {

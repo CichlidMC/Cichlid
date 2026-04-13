@@ -3,33 +3,19 @@ package fish.cichlidmc.cichlid.api;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-/**
- * Common paths used by Cichlid, mods, and plugins.
- */
+/// Common paths used by Cichlid, mods, and plugins.
 public final class CichlidPaths {
-	/**
-	 * Minecraft's root directory, colloquially ".minecraft"
-	 */
+	/// Minecraft's root directory, colloquially `.minecraft`. Also the working directory.
 	public static final Path MINECRAFT_ROOT = Paths.get("");
-	/**
-	 * Root for Cichlid files, ".minecraft/cichlid"
-	 */
+	/// Root for Cichlid files, `.minecraft/cichlid`
 	public static final Path CICHLID_ROOT = MINECRAFT_ROOT.resolve("cichlid");
-	/**
-	 * Standard mods folder, ".minecraft/cichlid/mods"
-	 */
+	/// Standard mods folder, `.minecraft/cichlid/mods`
 	public static final Path MODS = CICHLID_ROOT.resolve("mods");
-	/**
-	 * Plugins folder, ".minecraft/cichlid/plugins"
-	 */
+	/// Plugins folder, `.minecraft/cichlid/plugins`
 	public static final Path PLUGINS = CICHLID_ROOT.resolve("plugins");
-	/**
-	 * Configs folder, ".minecraft/cichlid/configs"
-	 */
+	/// Configs folder, `.minecraft/cichlid/configs`
 	public static final Path CONFIGS = CICHLID_ROOT.resolve("configs");
-	/**
-	 * Files cached by Cichlid, ".minecraft/cichlid/.cache"
-	 */
+	/// Files cached by Cichlid, `.minecraft/cichlid/.cache`
 	public static final Path CACHE = CICHLID_ROOT.resolve(".cache");
 
 	private CichlidPaths() {}

@@ -13,7 +13,7 @@ public enum Distribution {
 	public static final Codec<Distribution> CODEC = Codec.byName(Distribution.class, dist -> dist.serializedName);
 
 	public final String prettyName;
-	/// The name of this distribution in snake_case, for use in serialization.
+	/// The name of this distribution in `snake_case`, for use in serialization.
 	public final String serializedName;
 
 	Distribution(String prettyName) {
@@ -26,9 +26,7 @@ public enum Distribution {
 		return this.prettyName;
 	}
 
-	/**
-	 * Try to parse a Distribution from the given snake_case name, returning null if invalid.
-	 */
+	/// Try to parse a Distribution from the given `snake_case` name, returning null if invalid.
 	@Nullable
 	public static Distribution of(String name) {
 		return switch(name) {

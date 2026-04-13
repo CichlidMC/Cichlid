@@ -10,9 +10,7 @@ import fish.cichlidmc.tinyjson.value.composite.JsonObject;
 import java.io.IOException;
 import java.net.URI;
 
-/**
- * Common loading code shared between plugins and mods.
- */
+/// Common loading code shared between plugins and mods.
 public final class SharedLoading {
 	public static <M extends Metadata> Either<M, JsonException> parseMetadata(URI uri, MetadataParser<M> parser) throws IOException {
 		try {
