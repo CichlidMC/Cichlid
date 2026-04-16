@@ -26,10 +26,4 @@ open module fish.cichlidmc.cichlid {
 	exports fish.cichlidmc.cichlid.api.plugin.mod;
 
 	exports fish.cichlidmc.cichlid.api.version;
-
-	// export some internals to tests
-	exports fish.cichlidmc.cichlid.impl.util to fish.cichlidmc.cichlid.test;
-	exports fish.cichlidmc.cichlid.impl.version to fish.cichlidmc.cichlid.test;
-	exports fish.cichlidmc.cichlid.impl.version.parser to fish.cichlidmc.cichlid.test;
-	exports fish.cichlidmc.cichlid.impl.version.parser.token to fish.cichlidmc.cichlid.test;
 }
