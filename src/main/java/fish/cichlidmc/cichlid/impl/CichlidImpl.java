@@ -102,12 +102,6 @@ public class CichlidImpl {
 		logger.info("Version: " + Cichlid.version());
 		logger.space();
 
-		logger.info("Current Java information: " + System.getProperty("java.vendor") + ' ' + System.getProperty("java.version"));
-		logger.info("Can retransform: " + instrumentation.isRetransformClassesSupported());
-		logger.info("Can redefine: " + instrumentation.isRedefineClassesSupported());
-
-		logger.space();
-
 		DISTRIBUTION.set(detectDistribution());
 
 		try {
