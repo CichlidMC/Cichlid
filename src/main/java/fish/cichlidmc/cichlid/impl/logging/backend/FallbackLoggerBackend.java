@@ -1,7 +1,6 @@
-package fish.cichlidmc.cichlid.impl.logging.impl;
+package fish.cichlidmc.cichlid.impl.logging.backend;
 
 import fish.cichlidmc.cichlid.api.CichlidPaths;
-import fish.cichlidmc.cichlid.impl.logging.CichlidLogger;
 import fish.cichlidmc.cichlid.impl.util.Utils;
 
 import java.io.IOException;
@@ -11,7 +10,7 @@ import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class FallbackLoggerImpl implements CichlidLogger {
+public final class FallbackLoggerBackend implements LoggerBackend {
 	private static final Path file = CichlidPaths.CICHLID_ROOT.resolve("log.txt");
 	private static final String format = "[%s] [%s] [%s] [%s]: %s";
 	private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
@@ -28,43 +27,24 @@ public class FallbackLoggerImpl implements CichlidLogger {
 
 	private final String name;
 
-	public FallbackLoggerImpl(String name) {
+	public FallbackLoggerBackend(String name) {
 		this.name = name;
 	}
 
 	@Override
-	public void space() {
-		this.writeRaw("");
-	}
-
-	@Override
-	public void info(String message) {
-		this.write("INFO", message);
-	}
-
-	@Override
-	public void warn(String message) {
-		this.write("WARN", message);
-	}
-
-	@Override
-	public void error(String message) {
-		this.write("ERROR", message);
-	}
-
-	@Override
-	public void throwable(Throwable t) {
-		String string = Utils.getStackTrace(t);
-		for (String line : string.split(System.lineSeparator())) {
-			this.error(line);
-		}
-	}
-
-	private void write(String level, String message) {
+	public void write(String message, Level level) {
 		String time = timeFormat.format(new Date());
 		String thread = Thread.currentThread().getName();
 		String formatted = String.format(format, time, thread, this.name, level, message);
 		this.writeRaw(formatted);
+	}
+
+	@Override
+	public void write(Throwable throwable) {
+		String string = Utils.getStackTrace(throwable);
+		for (String line : string.split(System.lineSeparator())) {
+			this.write(line, Level.ERROR);
+		}
 	}
 
 	private void writeRaw(String string) {

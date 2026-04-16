@@ -16,9 +16,13 @@ import fish.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import fish.cichlidmc.cichlid.impl.loading.plugin.PluginLoader;
 import fish.cichlidmc.cichlid.impl.logging.CichlidLogger;
 import fish.cichlidmc.cichlid.impl.metadata.component.condition.ConditionRegistry;
+import fish.cichlidmc.cichlid.impl.sushi.BuiltInSushiTransformers;
 import fish.cichlidmc.cichlid.impl.transformer.CichlidTransformer;
 import fish.cichlidmc.cichlid.impl.util.FileUtils;
+import fish.cichlidmc.cichlid.impl.util.MinecraftEntrypoint;
+import fish.cichlidmc.cichlid.impl.util.Utils;
 import fish.cichlidmc.fishflakes.api.value.Late;
+import fish.cichlidmc.sushi.api.Sushi;
 import fish.cichlidmc.sushi.api.TransformerManager;
 import fish.cichlidmc.sushi.api.registry.Id;
 import fish.cichlidmc.tinyjson.JsonException;
@@ -27,13 +31,22 @@ import fish.cichlidmc.tinyjson.value.JsonValue;
 import fish.cichlidmc.tinyjson.value.primitive.JsonString;
 import org.jspecify.annotations.Nullable;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.instrument.Instrumentation;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 public class CichlidImpl {
@@ -43,25 +56,41 @@ public class CichlidImpl {
 	public static final Late.Mutable<Version> VERSION = Late.unset();
 	public static final Late.Mutable<Distribution> DISTRIBUTION = Late.unset();
 	public static final Late.Mutable<Version> MINECRAFT_VERSION = Late.unset();
+	public static final Late.Mutable<Instrumentation> INSTRUMENTATION = Late.unset();
 	public static final Late.Mutable<LoadedSet<Plugin>> PLUGINS = Late.unset();
 	public static final Late.Mutable<LoadedSet<Mod>> MODS = Late.unset();
 
 	public static final String CICHLID_VERSION_FILE = "cichlid_version.txt";
-	public static final String CLIENT_MAIN = "net.minecraft.client.main.Main";
 	public static final String MINECRAFT_VERSION_FILE = "version.json";
+	public static final String BRAND = "Cichlid";
+
+	@Nullable
+	public static final String DISTRIBUTION_OVERRIDE = System.getProperty("fish.cichlidmc.cichlid.distribution.override");
 
 	private static final CichlidLogger logger = CichlidLogger.get("Cichlid");
 	private static final ClassLoader classLoader = CichlidImpl.class.getClassLoader();
 
-	public static void load(@Nullable String stringArgs, Instrumentation instrumentation) {
+	public static Id id(String path) {
+		return new Id(Cichlid.ID, path);
+	}
+
+	public static void load(@Nullable String agentArgs, Instrumentation instrumentation) {
 		if (INITIALIZED.isSet()) {
 			throw new IllegalStateException("Cichlid is already loaded!");
 		}
 
 		logger.info("Cichlid initializing!");
 
-		try {
-			VERSION.set(readVersion());
+		if (agentArgs != null) {
+			logger.warn("Ignoring agent args: " + agentArgs);
+		}
+
+		Path resources = findResourcesRoot();
+		Path versionFile = resources.resolve(CICHLID_VERSION_FILE);
+
+		try (BufferedReader reader = Files.newBufferedReader(versionFile)) {
+			String content = reader.readAllAsString().trim();
+			VERSION.set(Version.of(content));
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to read Cichlid version", e);
 		}
@@ -86,7 +115,10 @@ public class CichlidImpl {
 		logger.info("Loading Minecraft " + Cichlid.minecraftVersion() + " (" + Cichlid.distribution() + ')');
 		logger.space();
 
+		INSTRUMENTATION.set(instrumentation);
+
 		logger.info("Bootstrapping registries...");
+		Sushi.bootstrap();
 		ConditionRegistry.bootstrap();
 
 		instrumentation.addTransformer(CichlidTransformer.INSTANCE);
@@ -110,7 +142,7 @@ public class CichlidImpl {
 
 		CichlidTransformer.initSushi(builder -> {
 			try {
-				loadSushiTransformers(builder);
+				loadSushiTransformers(builder, resources);
 			} catch (IOException e) {
 				throw new RuntimeException("Failed to load Sushi transformers", e);
 			}
@@ -124,10 +156,13 @@ public class CichlidImpl {
 		EntrypointHelper.invoke(PreLaunchEntrypoint.class, PreLaunchEntrypoint.KEY, PreLaunchEntrypoint::preLaunch, true);
 
 		logger.info("Continuing to Minecraft...");
+
 		logger.space();
 	}
 
-	private static void loadSushiTransformers(TransformerManager.Builder builder) throws IOException {
+	private static void loadSushiTransformers(TransformerManager.Builder builder, Path cichlidResources) throws IOException {
+		BuiltInSushiTransformers.register(builder, cichlidResources);
+
 		Path output = CichlidPaths.CICHLID_ROOT.resolve(".sushi").resolve("output");
 		FileUtils.deleteRecursively(output);
 		Files.createDirectories(output);
@@ -175,26 +210,53 @@ public class CichlidImpl {
 		}
 	}
 
-	private static Version readVersion() throws IOException {
-		InputStream stream = classLoader.getResourceAsStream(CICHLID_VERSION_FILE);
-
-		if (stream == null) {
-			throw new IllegalStateException(CICHLID_VERSION_FILE + " was not found");
+	private static Path findResourcesRoot() {
+		URL versionFileUrl = classLoader.getResource(CICHLID_VERSION_FILE);
+		if (versionFileUrl == null) {
+			throw new IllegalStateException("Version file URL was not found");
 		}
 
-		try (InputStreamReader reader = new InputStreamReader(stream)) {
-			String content = reader.readAllAsString();
-			return Version.of(content);
+		URI uri = Utils.toUri(versionFileUrl);
+
+		try {
+			// if we're running from a jar, try to open the filesystem
+			//noinspection resource - we want it to stay open
+			FileSystems.newFileSystem(uri, Map.of());
+		} catch (IOException _) {}
+
+		try {
+			Path path = Paths.get(versionFileUrl.toURI());
+			return Objects.requireNonNull(path.getParent(), "parent");
+		} catch (URISyntaxException e) {
+			throw new IllegalStateException("Version file URL is not a valid Path", e);
 		}
 	}
 
 	private static Distribution detectDistribution() {
-		try {
-			Class.forName(CLIENT_MAIN, false, classLoader);
-			return Distribution.CLIENT;
-		} catch (ClassNotFoundException _) {
-			return Distribution.DEDICATED_SERVER;
+		if (DISTRIBUTION_OVERRIDE != null) {
+			Distribution distribution = Distribution.of(DISTRIBUTION_OVERRIDE);
+			if (distribution == null) {
+				throw new IllegalStateException("Invalid distribution override: " + DISTRIBUTION);
+			}
+
+			logger.info("Detected distribution has been overridden to " + distribution);
+			return distribution;
 		}
+
+		Set<MinecraftEntrypoint> foundEntrypoints = EnumSet.noneOf(MinecraftEntrypoint.class);
+
+		for (MinecraftEntrypoint entrypoint : MinecraftEntrypoint.values()) {
+			String resourcePath = entrypoint.className.replace('.', '/') + ".class";
+			if (classLoader.getResource(resourcePath) != null) {
+				foundEntrypoints.add(entrypoint);
+			}
+		}
+
+		if (foundEntrypoints.size() == 1) {
+			return foundEntrypoints.iterator().next().distribution;
+		}
+
+		throw new IllegalStateException("The current distribution of Minecraft could not be automatically determined");
 	}
 
 	private static Version detectMinecraftVersion() throws IOException {

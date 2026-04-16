@@ -1,0 +1,17 @@
+{
+  "type": "wrap_method",
+  "class": "net.minecraft.client.ClientBrandRetriever",
+
+  "method": {
+    "name": "getClientModName",
+    "desc": {
+      "params": [],
+      "return": "java.lang.String"
+    }
+  },
+
+  "hook": {
+    "class": "fish.cichlidmc.cichlid.impl.sushi.BuiltInSushiHooks",
+    "name": "modifyClientBrand"
+  }
+}

@@ -4,6 +4,9 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,5 +84,15 @@ public class Utils {
 	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public static void ensureLoaded(Class<?> clazz) {
 		clazz.getDeclaredMethods();
+	}
+
+	/// Convert the given [URL] into a [URI].
+	/// @throws IllegalArgumentException if the conversion fails
+	public static URI toUri(URL url) {
+		try {
+			return url.toURI();
+		} catch (URISyntaxException e) {
+			throw new IllegalArgumentException("Invalid URI", e);
+		}
 	}
 }

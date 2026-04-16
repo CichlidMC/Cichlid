@@ -28,7 +28,13 @@ public record VersionImpl(String string, List<VersionComponent> components) impl
 	}
 
 	public static Version of(String string) {
-		List<VersionComponent> components = FlexVerComparator.decompose(string);
-		return new VersionImpl(string, components);
+		String trimmed = string.trim();
+
+		if (trimmed.isBlank()) {
+			throw new IllegalArgumentException("Cannot create a Version for an empty string");
+		}
+
+		List<VersionComponent> components = FlexVerComparator.decompose(trimmed);
+		return new VersionImpl(trimmed, components);
 	}
 }

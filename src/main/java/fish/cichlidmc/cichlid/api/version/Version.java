@@ -36,7 +36,8 @@ public sealed interface Version extends Comparable<Version> permits VersionImpl 
 	int hashCode();
 
 	/// Create a version from the given string.
-	/// Creating a version will never fail, and will always return a valid Version.
+	/// Any non-empty string will produce a valid Version.
+	/// @throws IllegalArgumentException if the given string is empty after trimming of whitespace
 	static Version of(String string) {
 		return VersionImpl.of(string);
 	}

@@ -1,0 +1,29 @@
+{
+  "type": "wrap_operation",
+  "class": "net.minecraft.bundler.Main",
+
+  "method": {
+    "name": "run",
+    "desc": {
+      "params": [ "java.lang.String[]" ],
+      "return": "void"
+    }
+  },
+
+  "expression": {
+    "type": "invoke",
+    "method": {
+      "name": "setContextClassLoader",
+      "owner": "java.lang.Thread",
+      "desc": {
+        "params": [ "java.lang.ClassLoader" ],
+        "return": "void"
+      }
+    }
+  },
+
+  "hook": {
+    "class": "fish.cichlidmc.cichlid.impl.sushi.BuiltInSushiHooks",
+    "name": "doNotSetCcl"
+  }
+}

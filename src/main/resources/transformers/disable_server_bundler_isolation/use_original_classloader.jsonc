@@ -1,0 +1,37 @@
+{
+  "type": "wrap_operation",
+  "class": "net.minecraft.bundler.Main",
+
+  "method": {
+    // lambda$run$0(Ljava/lang/String;Ljava/net/URLClassLoader;[Ljava/lang/String;)V
+    "name": "lambda$run$0",
+    "desc": {
+      "params": [
+        "java.lang.String",
+        "java.net.URLClassLoader",
+        "java.lang.String[]"
+      ],
+      "return": "void"
+    }
+  },
+
+  "expression": {
+    "type": "invoke",
+    "method": {
+      "name": "forName",
+      "owner": "java.lang.Class",
+      "desc": {
+        "params": [
+          "java.lang.String",
+          "java.lang.ClassLoader"
+        ],
+        "return": "java.lang.Object[]"
+      }
+    }
+  },
+
+  "hook": {
+    "class": "fish.cichlidmc.cichlid.impl.sushi.BuiltInSushiHooks",
+    "name": "useOriginalClassLoader"
+  }
+}

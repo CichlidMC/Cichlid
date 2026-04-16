@@ -22,7 +22,7 @@ public enum CichlidTransformer implements ClassFileTransformer {
 	INSTANCE;
 
 	public static final List<String> JAVA_PACKAGES = List.of("java/", "jdk/", "sun/", "javax/");
-	public static final List<String> MINECRAFT_PACKAGES = List.of("net/minecraft/", "com/mojang/");
+	public static final List<String> MINECRAFT_PACKAGES = List.of("net.minecraft", "com.mojang");
 
 	private static final CichlidLogger logger = CichlidLogger.get(CichlidTransformer.class);
 	private static final ScopedValue<Optional<ClassLoader>> currentClassLoader = ScopedValue.newInstance();
@@ -53,7 +53,7 @@ public enum CichlidTransformer implements ClassFileTransformer {
 			return this.transformSafe(loader, desc, bytes).orElse(null);
 		} catch (Throwable t) {
 			CichlidClassLoadCallbacks.registerException(loader, desc, t);
-			logger.error("Unhandled exception while transforming class " + desc);
+			logger.error("Unhandled exception while transforming class " + name);
 			logger.throwable(t);
 			return null;
 		}
@@ -105,6 +105,10 @@ public enum CichlidTransformer implements ClassFileTransformer {
 
 		consumer.accept(builder);
 		sushiManager = builder.build();
+
+		int transformers = sushiManager.transformers().size();
+		int phases = sushiManager.phases().size();
+		logger.info("Sushi initialized with " + transformers + " transformer(s) across " + phases + " phase(s)");
 	}
 
 	public static void emergencyStop() {

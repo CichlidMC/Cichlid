@@ -1,8 +1,7 @@
 package fish.cichlidmc.test_app;
 
 public class Main {
-	public static void main(String[] args) {
+	static void main() {
 		System.out.println("App main " + Main.class.getName());
-		System.out.println("Main ClassLoader: " + Main.class.getClassLoader());
 	}
 }
