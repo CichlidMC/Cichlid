@@ -7,7 +7,7 @@ public class TestEarlySetup implements EarlySetupEntrypoint {
 	@Override
 	public void earlySetup(Mod mod) {
 		System.out.println("Test mod early setup!!!!");
-		// this should fail
+		// this should fail when uncommented
 		// Dummy.load();
 	}
 }

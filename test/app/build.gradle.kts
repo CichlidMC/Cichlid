@@ -24,6 +24,7 @@ tasks.run {
     jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
     jvmArgs("-Xverify:all")
     jvmArgs("-Dfish.cichlidmc.cichlid.distribution.override=client")
+    jvmArgs("-Dfish.cichlidmc.cichlid.transform.export=true")
 
     agent.files.forEach {
         val arg = "-javaagent:$it"

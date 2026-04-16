@@ -65,13 +65,17 @@ public class CichlidImpl {
 	public static final String BRAND = "Cichlid";
 
 	@Nullable
-	public static final String DISTRIBUTION_OVERRIDE = System.getProperty("fish.cichlidmc.cichlid.distribution.override");
+	public static final String DISTRIBUTION_OVERRIDE = System.getProperty(propertyName("distribution.override"));
 
 	private static final CichlidLogger logger = CichlidLogger.get("Cichlid");
 	private static final ClassLoader classLoader = CichlidImpl.class.getClassLoader();
 
 	public static Id id(String path) {
 		return new Id(Cichlid.ID, path);
+	}
+
+	public static String propertyName(String suffix) {
+		return "fish.cichlidmc.cichlid." + suffix;
 	}
 
 	public static void load(@Nullable String agentArgs, Instrumentation instrumentation) {
@@ -117,11 +121,10 @@ public class CichlidImpl {
 
 		INSTRUMENTATION.set(instrumentation);
 
-		logger.info("Bootstrapping registries...");
+		logger.info("Bootstrapping...");
 		Sushi.bootstrap();
 		ConditionRegistry.bootstrap();
-
-		instrumentation.addTransformer(CichlidTransformer.INSTANCE);
+		CichlidTransformer.init(instrumentation);
 
 		logger.info("Loading plugins...");
 		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load(instrumentation);

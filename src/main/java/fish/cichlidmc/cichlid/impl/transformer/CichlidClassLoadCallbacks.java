@@ -41,14 +41,14 @@ public final class CichlidClassLoadCallbacks {
 	private void onLoad(Class<?> clazz, MethodHandles.Lookup lookup) {
 		ClassDesc desc = ClassDescs.of(clazz);
 		switch (this.info.get(desc)) {
-			case null -> throw new RuntimeException("A load callback was injected, but no info was found: " + desc);
+			case null -> throw new RuntimeException("A load callback was injected, but no info was found: " + ClassDescs.fullName(desc));
 			case Either.Left(Throwable throwable) -> this.handleThrowable(desc, throwable);
 			case Either.Right(Requirements requirements) -> this.handleRequirements(lookup, requirements);
 		}
 	}
 
 	private void handleThrowable(ClassDesc desc, Throwable throwable) {
-		throw new TransformException("Exception while transforming class " + desc, throwable);
+		throw new TransformException("Exception while transforming class " + ClassDescs.fullName(desc), throwable);
 	}
 
 	private void handleRequirements(MethodHandles.Lookup lookup, Requirements requirements) {
