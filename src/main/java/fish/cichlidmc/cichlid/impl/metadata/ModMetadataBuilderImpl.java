@@ -5,7 +5,7 @@ import fish.cichlidmc.cichlid.api.metadata.ModMetadata;
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
 import fish.cichlidmc.cichlid.api.plugin.ModMetadataBuilder;
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.cichlid.impl.metadata.component.EntrypointsImpl;
 import org.jspecify.annotations.Nullable;
 
@@ -21,13 +21,13 @@ public class ModMetadataBuilderImpl implements ModMetadataBuilder {
 	@Nullable
 	private String name;
 	@Nullable
-	private Version version;
+	private ModVersion version;
 	@Nullable
 	private String description;
 
 	private final Map<String, List<String>> entrypoints = new HashMap<>();
 	private final Map<String, String> credits = new HashMap<>();
-	private final Map<String, Version> provides = new HashMap<>();
+	private final Map<String, ModVersion> provides = new HashMap<>();
 	private final Map<String, Dependency> dependencies = new HashMap<>();
 	private final Map<String, Incompatibility> incompatibilities = new HashMap<>();
 
@@ -48,7 +48,7 @@ public class ModMetadataBuilderImpl implements ModMetadataBuilder {
 	}
 
 	@Override
-	public ModMetadataBuilder version(Version version) {
+	public ModMetadataBuilder version(ModVersion version) {
 		this.version = version;
 		return this;
 	}
@@ -73,7 +73,7 @@ public class ModMetadataBuilderImpl implements ModMetadataBuilder {
 	}
 
 	@Override
-	public ModMetadataBuilder provides(String id, Version version) {
+	public ModMetadataBuilder provides(String id, ModVersion version) {
 		this.provides.put(id, version);
 		return this;
 	}
@@ -94,7 +94,7 @@ public class ModMetadataBuilderImpl implements ModMetadataBuilder {
 	public ModMetadata build() {
 		String id = Objects.requireNonNull(this.id, "ID has not been set");
 		String name = Objects.requireNonNull(this.name, "Name has not been set");
-		Version version = Objects.requireNonNull(this.version, "Version has not been set");
+		ModVersion version = Objects.requireNonNull(this.version, "Version has not been set");
 		String description = Objects.requireNonNull(this.description, "Description has not been set");
 
 		return new ModMetadataImpl(

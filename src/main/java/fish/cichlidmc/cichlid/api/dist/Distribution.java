@@ -1,5 +1,6 @@
 package fish.cichlidmc.cichlid.api.dist;
 
+import fish.cichlidmc.cichlid.impl.CichlidImpl;
 import fish.cichlidmc.tinycodecs.api.codec.Codec;
 import org.jspecify.annotations.Nullable;
 
@@ -34,5 +35,10 @@ public enum Distribution {
 			case "dedicated_server" -> DEDICATED_SERVER;
 			default -> null;
 		};
+	}
+
+	/// @return the currently loaded Distribution of Minecraft
+	public static Distribution current() {
+		return CichlidImpl.DISTRIBUTION.get();
 	}
 }

@@ -1,19 +1,20 @@
 package fish.cichlidmc.cichlid.impl.version.parser;
 
-import fish.cichlidmc.cichlid.api.version.VersionPredicate;
+import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.util.Utils;
 import fish.cichlidmc.cichlid.impl.version.parser.token.BooleanOperatorToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.ParenthesisToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.Token;
 import fish.cichlidmc.cichlid.impl.version.parser.token.VersionOperatorToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.VersionToken;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VersionPredicateTokenizer {
+public final class VersionPredicateTokenizer {
 	public static final Map<String, Token> CONSTANT_TOKENS = Utils.make(() -> {
 		Map<String, Token> map = new LinkedHashMap<>();
 		List<Class<? extends Token>> classes = new ArrayList<>();
@@ -49,7 +50,7 @@ public class VersionPredicateTokenizer {
 			// not a constant token, read a version
 			Token prev = previous(tokens);
 			if (!(prev instanceof VersionOperatorToken)) {
-				throw VersionPredicate.SyntaxException.of("Expected operator before version at index " + i, string);
+				throw VersionPredicateSyntaxException.of("Expected operator before version at index " + i, string);
 			}
 
 			// read ahead to find the end of the version
@@ -74,6 +75,7 @@ public class VersionPredicateTokenizer {
 		return tokens;
 	}
 
+	@Nullable
 	private static Token readConstantToken(String s) {
 		for (Map.Entry<String, Token> entry : CONSTANT_TOKENS.entrySet()) {
 			if (s.startsWith(entry.getKey())) {
@@ -83,7 +85,8 @@ public class VersionPredicateTokenizer {
 		return null;
 	}
 
+	@Nullable
 	private static Token previous(List<Token> tokens) {
-		return tokens.isEmpty() ? null : tokens.get(tokens.size() - 1);
+		return tokens.isEmpty() ? null : tokens.getLast();
 	}
 }

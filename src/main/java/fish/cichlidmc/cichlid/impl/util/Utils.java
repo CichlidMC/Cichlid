@@ -1,7 +1,5 @@
 package fish.cichlidmc.cichlid.impl.util;
 
-import org.jspecify.annotations.Nullable;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URI;
@@ -18,12 +16,6 @@ import java.util.function.Supplier;
 public class Utils {
 	public static <T> T make(Supplier<T> supplier) {
 		return supplier.get();
-	}
-
-	@Nullable
-	public static <T> T nextOrNull(List<T> list, int i) {
-		int next = i + 1;
-		return next == list.size() ? null : list.get(next);
 	}
 
 	@SafeVarargs

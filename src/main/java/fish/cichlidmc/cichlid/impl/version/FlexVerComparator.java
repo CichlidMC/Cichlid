@@ -13,9 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * FlexVer, by unascribed. Originally from
- * <a href="https://github.com/unascribed/FlexVer/blob/trunk/java/src/main/java/com/unascribed/flexver/FlexVerComparator.java">here</a>.
- * Slightly modified to cache VersionComponents in Version instances instead of operating on Strings directly.
+ * <a href="https://git.sleeping.town/exa/FlexVer">FlexVer</a>, by Exa.
+ * <p>
+ * Slightly modified to cache VersionComponents instead of operating on Strings directly.
  * <p>
  * Implements FlexVer, a SemVer-compatible intuitive comparator for free-form versioning strings as
  * seen in the wild. It's designed to sort versions like people do, rather than attempting to force

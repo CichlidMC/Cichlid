@@ -1,6 +1,6 @@
 package fish.cichlidmc.cichlid.test;
 
-import fish.cichlidmc.cichlid.api.version.VersionPredicate;
+import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.util.Utils;
 import fish.cichlidmc.cichlid.impl.version.parser.VersionPredicateTokenizer;
 import fish.cichlidmc.cichlid.impl.version.parser.token.BooleanOperatorToken;
@@ -103,6 +103,6 @@ public class VersionPredicateTokenizerTests {
 
 	@Test
 	public void testUnknownOperator() {
-		Assertions.assertThrows(VersionPredicate.SyntaxException.class, () -> VersionPredicateTokenizer.tokenize("%1.5"));
+		Assertions.assertThrows(VersionPredicateSyntaxException.class, () -> VersionPredicateTokenizer.tokenize("%1.5"));
 	}
 }

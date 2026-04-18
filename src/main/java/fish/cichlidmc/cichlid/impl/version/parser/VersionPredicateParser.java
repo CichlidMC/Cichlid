@@ -1,11 +1,14 @@
 package fish.cichlidmc.cichlid.impl.version.parser;
 
-import fish.cichlidmc.cichlid.api.version.VersionPredicate;
+import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.util.Either;
 import fish.cichlidmc.cichlid.impl.util.IntRange;
-import fish.cichlidmc.cichlid.impl.util.Utils;
-import fish.cichlidmc.cichlid.impl.version.parser.impl.AlwaysTrueVersionPredicate;
-import fish.cichlidmc.cichlid.impl.version.parser.impl.ParsedVersionPredicate;
+import fish.cichlidmc.cichlid.impl.version.OptionalComparable;
+import fish.cichlidmc.cichlid.impl.version.parser.impl.AnyVersionPredicate;
+import fish.cichlidmc.cichlid.impl.version.parser.impl.BooleanOperatorPredicate;
+import fish.cichlidmc.cichlid.impl.version.parser.impl.EqualsVersionPredicate;
+import fish.cichlidmc.cichlid.impl.version.parser.impl.NotEqualsVersionPredicate;
+import fish.cichlidmc.cichlid.impl.version.parser.impl.VersionOperatorPredicate;
 import fish.cichlidmc.cichlid.impl.version.parser.token.BooleanOperatorToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.ParenthesisToken;
 import fish.cichlidmc.cichlid.impl.version.parser.token.Token;
@@ -14,65 +17,74 @@ import fish.cichlidmc.cichlid.impl.version.parser.token.VersionToken;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-public class VersionPredicateParser {
-	public static VersionPredicate parse(String string) {
-		string = string.trim();
+public final class VersionPredicateParser<T> {
+	private final VersionType<T> type;
+	private final String string;
 
-		if (string.equals("any")) {
-			return AlwaysTrueVersionPredicate.INSTANCE;
-		} else if (string.isEmpty()) {
-			throw VersionPredicate.SyntaxException.ofEmpty("Version predicate cannot be empty");
+	private VersionPredicateParser(VersionType<T> type, String string) throws VersionPredicateSyntaxException {
+		if (string.isBlank()) {
+			throw VersionPredicateSyntaxException.ofEmpty("Version predicate cannot be empty");
 		}
 
-		List<Either<VersionPredicate, Token>> tokens = VersionPredicateTokenizer.tokenize(string)
-				.stream()
-				.map(Either::<VersionPredicate, Token>right) // ew
-				.collect(Collectors.toList());
-
-		return parse(tokens, string);
+		this.type = type;
+		this.string = string.trim();
 	}
 
-	private static VersionPredicate parse(List<Either<VersionPredicate, Token>> tokens, String string) {
+	public static <T> Predicate<T> parse(VersionType<T> type, String string) throws VersionPredicateSyntaxException {
+		return new VersionPredicateParser<>(type, string).parse();
+	}
+
+	private Predicate<T> parse() throws VersionPredicateSyntaxException {
+		if (this.string.equals("any")) {
+			return AnyVersionPredicate.INSTANCE.cast();
+		}
+
+		List<Either<Predicate<T>, Token>> tokens = new ArrayList<>();
+		VersionPredicateTokenizer.tokenize(this.string).forEach(token -> tokens.add(Either.right(token)));
+		return this.parse(Collections.unmodifiableList(tokens));
+	}
+
+	private Predicate<T> parse(List<Either<Predicate<T>, Token>> tokens) {
 		// fast path for most common case: operator and version
 		if (tokens.size() == 2) {
-			VersionPredicate predicate = matchSimplePattern(tokens, 0);
+			Predicate<T> predicate = this.matchSimplePattern(tokens, 0);
 			if (predicate != null) {
 				return predicate;
 			}
 		}
 
-		List<Either<VersionPredicate, Token>> simplified = simplifyParentheses(tokens, string);
-		if (anyMatch(simplified, token -> token instanceof ParenthesisToken)) {
-			throw new RuntimeException("Failed to simplify out all parentheses");
+		List<Either<Predicate<T>, Token>> simplified = this.simplifyParentheses(tokens);
+		if (anyRightsMatch(simplified, token -> token instanceof ParenthesisToken)) {
+			throw this.fail("Failed to simplify out all parentheses");
 		}
 
-		List<Either<VersionPredicate, Token>> evaluated = evaluateSimplePredicates(simplified);
-		if (anyMatch(evaluated, token -> token instanceof VersionOperatorToken || token instanceof VersionToken)) {
-			throw new RuntimeException("failed to evaluate all simple predicates");
+		List<Either<Predicate<T>, Token>> evaluated = this.evaluateSimplePredicates(simplified);
+		if (anyRightsMatch(evaluated, token -> token instanceof VersionOperatorToken || token instanceof VersionToken)) {
+			throw this.fail("failed to evaluate all simple predicates");
 		}
 
 		// now only contains parsed predicates and boolean operations
-		List<Either<VersionPredicate, BooleanOperatorToken>> validated = assertFullySimplified(evaluated, string);
+		List<Either<Predicate<T>, BooleanOperatorToken>> validated = this.assertFullySimplified(evaluated);
 		// && has precedence, same as java
-		List<Either<VersionPredicate, BooleanOperatorToken>> anded = evaluateBooleanOps(validated, BooleanOperatorToken.AND);
-		List<Either<VersionPredicate, BooleanOperatorToken>> ored = evaluateBooleanOps(anded, BooleanOperatorToken.OR);
+		List<Either<Predicate<T>, BooleanOperatorToken>> anded = this.evaluateBooleanOps(validated, BooleanOperatorToken.AND);
+		List<Either<Predicate<T>, BooleanOperatorToken>> ored = this.evaluateBooleanOps(anded, BooleanOperatorToken.OR);
 		if (ored.size() != 1 || ored.getFirst().isRight()) {
-			throw new RuntimeException("Something has gone very wrong");
+			throw this.fail("Something has gone very wrong");
 		}
 
-		return new ParsedVersionPredicate(ored.getFirst().left(), string);
+		return ored.getFirst().left();
 	}
 
-	private static List<Either<VersionPredicate, Token>> simplifyParentheses(List<Either<VersionPredicate, Token>> tokens, String string) {
+	private List<Either<Predicate<T>, Token>> simplifyParentheses(List<Either<Predicate<T>, Token>> tokens) {
 		// find top-level parentheses groups
 		List<IntRange> groups = new ArrayList<>();
 		int depth = 0;
 		for (int i = 0, openIndex = -1; i < tokens.size(); i++) {
-			Either<VersionPredicate, Token> either = tokens.get(i);
+			Either<Predicate<T>, Token> either = tokens.get(i);
 			if (either.isLeft())
 				continue;
 
@@ -85,7 +97,7 @@ public class VersionPredicateParser {
 			} else if (token == ParenthesisToken.CLOSE) {
 				depth--;
 				if (depth < 0) {
-					throw VersionPredicate.SyntaxException.of("Closing/opening parenthesis mismatch", string);
+					throw this.fail("Closing/opening parenthesis mismatch");
 				} else if (depth == 0) {
 					// completed group
 					// openIndex can never be -1 here, if it was the depth < 0 would also be hit
@@ -96,17 +108,17 @@ public class VersionPredicateParser {
 		}
 
 		if (depth > 0) {
-			throw VersionPredicate.SyntaxException.of("More opening parentheses than closing ones", string);
+			throw this.fail("More opening parentheses than closing ones");
 		}
 
 		if (groups.isEmpty())
 			return tokens;
 
 		// now go through tokens again, simplifying the groups
-		List<Either<VersionPredicate, Token>> simplified = new ArrayList<>();
-		List<Either<VersionPredicate, Token>> inCurrentGroup = new ArrayList<>();
+		List<Either<Predicate<T>, Token>> simplified = new ArrayList<>();
+		List<Either<Predicate<T>, Token>> inCurrentGroup = new ArrayList<>();
 		outer: for (int i = 0; i < tokens.size(); i++) {
-			Either<VersionPredicate, Token> either = tokens.get(i);
+			Either<Predicate<T>, Token> either = tokens.get(i);
 
 			for (IntRange group : groups) {
 				if (group.contains(i)) {
@@ -118,7 +130,7 @@ public class VersionPredicateParser {
 
 					if (i == group.max) {
 						// final token in group
-						VersionPredicate predicate = parse(inCurrentGroup, string);
+						Predicate<T> predicate = this.parse(inCurrentGroup);
 						simplified.add(Either.left(predicate));
 						inCurrentGroup.clear();
 					}
@@ -135,11 +147,11 @@ public class VersionPredicateParser {
 		return simplified;
 	}
 
-	private static List<Either<VersionPredicate, Token>> evaluateSimplePredicates(List<Either<VersionPredicate, Token>> tokens) {
+	private List<Either<Predicate<T>, Token>> evaluateSimplePredicates(List<Either<Predicate<T>, Token>> tokens) {
 		// replace all operations followed by a version with a simple predicate
-		List<Either<VersionPredicate, Token>> evaluated = new ArrayList<>();
+		List<Either<Predicate<T>, Token>> evaluated = new ArrayList<>();
 		for (int i = 0; i < tokens.size(); i++) {
-			VersionPredicate predicate = matchSimplePattern(tokens, i);
+			Predicate<T> predicate = this.matchSimplePattern(tokens, i);
 			if (predicate != null) {
 				evaluated.add(Either.left(predicate));
 				i++; // skip second token
@@ -151,17 +163,17 @@ public class VersionPredicateParser {
 		return evaluated;
 	}
 
-	private static List<Either<VersionPredicate, BooleanOperatorToken>> evaluateBooleanOps(List<Either<VersionPredicate, BooleanOperatorToken>> tokens, BooleanOperatorToken type) {
+	private List<Either<Predicate<T>, BooleanOperatorToken>> evaluateBooleanOps(List<Either<Predicate<T>, BooleanOperatorToken>> tokens, BooleanOperatorToken type) {
 		if (tokens.size() == 1)
 			return tokens;
 
-		List<Either<VersionPredicate, BooleanOperatorToken>> evaluated = new ArrayList<>();
+		List<Either<Predicate<T>, BooleanOperatorToken>> evaluated = new ArrayList<>();
 		for (int i = 1; i < tokens.size(); i += 2) {
-			Either<VersionPredicate, BooleanOperatorToken> op = tokens.get(i);
-			Either<VersionPredicate, BooleanOperatorToken> left = tokens.get(i - 1);
-			Either<VersionPredicate, BooleanOperatorToken> right = tokens.get(i + 1);
+			Either<Predicate<T>, BooleanOperatorToken> op = tokens.get(i);
+			Either<Predicate<T>, BooleanOperatorToken> left = tokens.get(i - 1);
+			Either<Predicate<T>, BooleanOperatorToken> right = tokens.get(i + 1);
 			if (op.right() == type) {
-				VersionPredicate merged = op.right().apply(left.left(), right.left());
+				Predicate<T> merged = new BooleanOperatorPredicate<>(left.left(), right.left(), op.right());
 				evaluated.add(Either.left(merged));
 			} else {
 				// doesn't match, just pass them through
@@ -178,32 +190,52 @@ public class VersionPredicateParser {
 	}
 
 	@Nullable
-	private static VersionPredicate matchSimplePattern(List<Either<VersionPredicate, Token>> tokens, int i) {
-		Either<VersionPredicate, Token> either = tokens.get(i);
-		Either<VersionPredicate, Token> next = Utils.nextOrNull(tokens, i);
-		if (either.isRight() && either.right() instanceof VersionOperatorToken operator && next != null && next.isRight() && next.right() instanceof VersionToken version) {
-			return operator.createPredicate(version.version);
+	private Predicate<T> matchSimplePattern(List<Either<Predicate<T>, Token>> tokens, int i) {
+		Either<Predicate<T>, Token> either = tokens.get(i);
+		if (either.isLeft() || !(either.right() instanceof VersionOperatorToken operator))
+			return null;
+
+		Either<Predicate<T>, Token> next = nextOrNull(tokens, i);
+		if (next == null || next.isLeft() || !(next.right() instanceof VersionToken(String versionString)))
+			return null;
+
+		T version = this.type.parse(versionString);
+
+		if (this.type.isOnlyComparableByEquality(version)) {
+			return switch (operator) {
+				case EQUAL -> new EqualsVersionPredicate<>(version);
+				case NOT_EQUAL -> new NotEqualsVersionPredicate<>(version);
+				default -> throw this.fail("Version '" + version + "' can only be compared by equality (== or !=)");
+			};
 		}
-		return null;
+
+		OptionalComparable<T> comparable = this.type.asComparable(version);
+		return new VersionOperatorPredicate<>(version, operator, comparable);
 	}
 
-	private static List<Either<VersionPredicate, BooleanOperatorToken>> assertFullySimplified(List<Either<VersionPredicate, Token>> tokens, String string) {
+	@SuppressWarnings("unchecked") // cast at end is validated by loop
+	private List<Either<Predicate<T>, BooleanOperatorToken>> assertFullySimplified(List<Either<Predicate<T>, Token>> tokens) {
 		if (tokens.size() % 2 == 0) {
 			// must be an odd number of tokens
-			throw VersionPredicate.SyntaxException.of("Cannot merge boolean ops: even number of tokens", string);
+			throw this.fail("Cannot merge boolean ops: even number of tokens");
 		}
+
 		// predicate, boolean op, predicate, boolean op, etc
 		for (int i = 0; i < tokens.size(); i++) {
-			Either<VersionPredicate, Token> either = tokens.get(i);
-			if (!isCorrectToken(i, either)) {
-				throw VersionPredicate.SyntaxException.of("Cannot merge boolean ops: must alternate between predicates and ops", string);
+			Either<Predicate<T>, Token> either = tokens.get(i);
+			if (!isExpectedSimplifiedToken(i, either)) {
+				throw this.fail("Cannot merge boolean ops: must alternate between predicates and ops");
 			}
 		}
-		//noinspection unchecked
-		return (List<Either<VersionPredicate, BooleanOperatorToken>>) (Object) tokens;
+
+		return (List<Either<Predicate<T>, BooleanOperatorToken>>) (Object) tokens;
 	}
 
-	private static boolean isCorrectToken(int i, Either<VersionPredicate, Token> either) {
+	private VersionPredicateSyntaxException fail(String message) {
+		return VersionPredicateSyntaxException.of(message, this.string);
+	}
+
+	private static boolean isExpectedSimplifiedToken(int i, Either<?, Token> either) {
 		if (i % 2 == 0) {
 			// even, predicate expected
 			return either.isLeft();
@@ -213,12 +245,18 @@ public class VersionPredicateParser {
 		}
 	}
 
-	private static boolean anyMatch(List<Either<VersionPredicate, Token>> tokens, Predicate<Token> predicate) {
-		for (Either<VersionPredicate, Token> either : tokens) {
+	private static <L, R> boolean anyRightsMatch(List<Either<L, R>> tokens, Predicate<R> predicate) {
+		for (Either<L, R> either : tokens) {
 			if (either.isRight() && predicate.test(either.right())) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	@Nullable
+	private static <T> T nextOrNull(List<T> list, int i) {
+		int next = i + 1;
+		return next == list.size() ? null : list.get(next);
 	}
 }

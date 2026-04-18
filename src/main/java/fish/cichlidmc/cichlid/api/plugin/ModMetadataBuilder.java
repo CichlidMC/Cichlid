@@ -3,7 +3,7 @@ package fish.cichlidmc.cichlid.api.plugin;
 import fish.cichlidmc.cichlid.api.metadata.ModMetadata;
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.cichlid.impl.metadata.ModMetadataBuilderImpl;
 import fish.cichlidmc.cichlid.impl.metadata.ModMetadataImpl;
 import fish.cichlidmc.tinyjson.JsonException;
@@ -19,7 +19,7 @@ public interface ModMetadataBuilder {
 
 	ModMetadataBuilder name(String name);
 
-	ModMetadataBuilder version(Version version);
+	ModMetadataBuilder version(ModVersion version);
 
 	ModMetadataBuilder description(String description);
 
@@ -30,7 +30,7 @@ public interface ModMetadataBuilder {
 	ModMetadataBuilder credit(String name, String role);
 
 	/// Optional. Adds a mod that this metadata provides.
-	ModMetadataBuilder provides(String id, Version version);
+	ModMetadataBuilder provides(String id, ModVersion version);
 
 	/// Optional. Adds a dependency to this metadata.
 	ModMetadataBuilder dependency(Dependency dependency);

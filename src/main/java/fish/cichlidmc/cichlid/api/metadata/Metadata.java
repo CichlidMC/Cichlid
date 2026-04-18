@@ -2,7 +2,7 @@ package fish.cichlidmc.cichlid.api.metadata;
 
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.cichlid.impl.metadata.MetadataImpl;
 import fish.cichlidmc.fishflakes.api.value.Result;
 import fish.cichlidmc.tinycodecs.api.codec.Codec;
@@ -26,7 +26,7 @@ public sealed interface Metadata permits ModMetadata, MetadataImpl {
 	String name();
 
 	/// The currently loaded version.
-	Version version();
+	ModVersion version();
 
 	/// Description. No restrictions, may be multi-line. Optional, may be empty.
 	String description();
@@ -35,7 +35,7 @@ public sealed interface Metadata permits ModMetadata, MetadataImpl {
 	Map<String, String> credits();
 
 	/// Map of IDs to provided versions. Mods can only provide other mods, likewise for plugins.
-	Map<String, Version> provides();
+	Map<String, ModVersion> provides();
 
 	/// Map of IDs to dependencies.
 	/// Both mods and plugins can depend on other plugins, but only mods can depend on mods.

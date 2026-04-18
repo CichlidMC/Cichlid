@@ -1,6 +1,5 @@
 package fish.cichlidmc.cichlid.impl.metadata.component.condition;
 
-import fish.cichlidmc.cichlid.api.Cichlid;
 import fish.cichlidmc.cichlid.api.dist.Distribution;
 import fish.cichlidmc.cichlid.api.metadata.component.Condition;
 import fish.cichlidmc.tinycodecs.api.codec.map.MapCodec;
@@ -18,7 +17,7 @@ public final class DistCondition implements Condition {
 
 	@Override
 	public boolean matches(Context context) {
-		return this.distribution == Cichlid.distribution();
+		return this.distribution == Distribution.current();
 	}
 
 	@Override

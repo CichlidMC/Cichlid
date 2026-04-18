@@ -2,21 +2,23 @@ package fish.cichlidmc.cichlid.impl.metadata.component;
 
 import fish.cichlidmc.cichlid.api.metadata.component.Condition;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
-import fish.cichlidmc.cichlid.api.version.VersionPredicate;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
+import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.metadata.component.condition.ConditionRegistry;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.value.composite.JsonObject;
 import fish.cichlidmc.tinyjson.value.primitive.JsonString;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 public class IncompatibilityImpl implements Incompatibility {
 	private final String id;
-	private final VersionPredicate predicate;
+	private final Predicate<ModVersion> predicate;
 	private final String reason;
 	private final Collection<Condition> conditions;
 
-	public IncompatibilityImpl(String id, VersionPredicate predicate, String reason, Collection<Condition> conditions) {
+	public IncompatibilityImpl(String id, Predicate<ModVersion> predicate, String reason, Collection<Condition> conditions) {
 		this.id = id;
 		this.predicate = predicate;
 		this.reason = reason;
@@ -29,7 +31,7 @@ public class IncompatibilityImpl implements Incompatibility {
 	}
 
 	@Override
-	public VersionPredicate predicate() {
+	public Predicate<ModVersion> predicate() {
 		return this.predicate;
 	}
 
@@ -48,9 +50,9 @@ public class IncompatibilityImpl implements Incompatibility {
 		String reason = json.getOrThrow("reason").asString().value();
 		Collection<Condition> conditions = ConditionRegistry.parse(json.get("conditions"));
 		try {
-			VersionPredicate parsed = VersionPredicate.parse(predicateJson.value());
+			Predicate<ModVersion> parsed = ModVersion.parsePredicate(predicateJson.value());
 			return new IncompatibilityImpl(id, parsed, reason, conditions);
-		} catch (VersionPredicate.SyntaxException e) {
+		} catch (VersionPredicateSyntaxException e) {
 			throw new JsonException(predicateJson, e.getMessage());
 		}
 	}

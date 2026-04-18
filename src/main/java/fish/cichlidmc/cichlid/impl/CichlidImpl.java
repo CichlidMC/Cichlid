@@ -10,7 +10,8 @@ import fish.cichlidmc.cichlid.api.metadata.Metadata;
 import fish.cichlidmc.cichlid.api.mod.entrypoint.EarlySetupEntrypoint;
 import fish.cichlidmc.cichlid.api.mod.entrypoint.EntrypointHelper;
 import fish.cichlidmc.cichlid.api.mod.entrypoint.PreLaunchEntrypoint;
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.MinecraftVersion;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.cichlid.impl.loading.mod.ModLoader;
 import fish.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import fish.cichlidmc.cichlid.impl.loading.plugin.PluginLoader;
@@ -28,7 +29,6 @@ import fish.cichlidmc.sushi.api.registry.Id;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.TinyJson;
 import fish.cichlidmc.tinyjson.value.JsonValue;
-import fish.cichlidmc.tinyjson.value.primitive.JsonString;
 import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -53,9 +53,9 @@ public class CichlidImpl {
 	// cichlid is initialized if any value has been set (the value will always be null)
 	public static final Late.Mutable<@Nullable Void> INITIALIZED = Late.unset();
 
-	public static final Late.Mutable<Version> VERSION = Late.unset();
+	public static final Late.Mutable<ModVersion> VERSION = Late.unset();
 	public static final Late.Mutable<Distribution> DISTRIBUTION = Late.unset();
-	public static final Late.Mutable<Version> MINECRAFT_VERSION = Late.unset();
+	public static final Late.Mutable<MinecraftVersion> MINECRAFT_VERSION = Late.unset();
 	public static final Late.Mutable<Instrumentation> INSTRUMENTATION = Late.unset();
 	public static final Late.Mutable<LoadedSet<Plugin>> PLUGINS = Late.unset();
 	public static final Late.Mutable<LoadedSet<Mod>> MODS = Late.unset();
@@ -94,7 +94,7 @@ public class CichlidImpl {
 
 		try (BufferedReader reader = Files.newBufferedReader(versionFile)) {
 			String content = reader.readAllAsString().trim();
-			VERSION.set(Version.of(content));
+			VERSION.set(ModVersion.of(content));
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to read Cichlid version", e);
 		}
@@ -110,7 +110,7 @@ public class CichlidImpl {
 			throw new RuntimeException("Failed to detect Minecraft version", e);
 		}
 
-		logger.info("Loading Minecraft " + Cichlid.minecraftVersion() + " (" + Cichlid.distribution() + ')');
+		logger.info("Loading Minecraft " + MinecraftVersion.current() + " (" + Distribution.current() + ')');
 		logger.space();
 
 		INSTRUMENTATION.set(instrumentation);
@@ -218,7 +218,7 @@ public class CichlidImpl {
 		try {
 			// if we're running from a jar, try to open the filesystem
 			//noinspection resource - we want it to stay open
-			FileSystems.newFileSystem(uri, Map.of());
+			FileSystems.newFileSystem(uri, Map.of("accessMode", "readOnly"));
 		} catch (IOException _) {}
 
 		try {
@@ -256,15 +256,21 @@ public class CichlidImpl {
 		throw new IllegalStateException("The current distribution of Minecraft could not be automatically determined");
 	}
 
-	private static Version detectMinecraftVersion() throws IOException {
+	private static MinecraftVersion detectMinecraftVersion() throws IOException {
 		InputStream stream = classLoader.getResourceAsStream(MINECRAFT_VERSION_FILE);
 		if (stream == null) {
 			throw new IOException("Minecraft version file is missing");
 		}
 
 		try (InputStreamReader reader = new InputStreamReader(stream)) {
-			JsonString string = TinyJson.parse(reader).asObject().getOrThrow("id").asString();
-			return Version.of(string.value());
+			String string = TinyJson.parse(reader).asObject().getOrThrow("id").asString().value();
+			MinecraftVersion version = MinecraftVersion.parseAny(string);
+
+			if (version instanceof MinecraftVersion.Special) {
+				logger.warn("Non-standard Minecraft version detected, comparisons will be limited.");
+			}
+
+			return version;
 		} catch (JsonException e) {
 			throw new IOException("Failed to parse Minecraft version file", e);
 		}

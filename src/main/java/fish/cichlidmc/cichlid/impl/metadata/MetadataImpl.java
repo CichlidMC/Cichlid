@@ -3,7 +3,7 @@ package fish.cichlidmc.cichlid.impl.metadata;
 import fish.cichlidmc.cichlid.api.metadata.Metadata;
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.cichlid.impl.metadata.component.DependencyImpl;
 import fish.cichlidmc.cichlid.impl.metadata.component.IncompatibilityImpl;
 import fish.cichlidmc.tinyjson.JsonException;
@@ -17,15 +17,15 @@ import java.util.Map;
 public sealed class MetadataImpl implements Metadata permits ModMetadataImpl, PluginMetadata {
 	protected final String id;
 	protected final String name;
-	protected final Version version;
+	protected final ModVersion version;
 	protected final String description;
 	protected final Map<String, String> credits;
-	protected final Map<String, Version> provides;
+	protected final Map<String, ModVersion> provides;
 	protected final Map<String, Dependency> dependencies;
 	protected final Map<String, Incompatibility> incompatibilities;
 
-	MetadataImpl(String id, String name, Version version, String description, Map<String, String> credits,
-				 Map<String, Version> provides, Map<String, Dependency> dependencies, Map<String, Incompatibility> incompatibilities) {
+	MetadataImpl(String id, String name, ModVersion version, String description, Map<String, String> credits,
+	             Map<String, ModVersion> provides, Map<String, Dependency> dependencies, Map<String, Incompatibility> incompatibilities) {
 		if (!Metadata.isValidId(id)) {
 			throw new IllegalArgumentException("Invalid ID: " + id);
 		}
@@ -55,7 +55,7 @@ public sealed class MetadataImpl implements Metadata permits ModMetadataImpl, Pl
 	}
 
 	@Override
-	public Version version() {
+	public ModVersion version() {
 		return this.version;
 	}
 
@@ -70,7 +70,7 @@ public sealed class MetadataImpl implements Metadata permits ModMetadataImpl, Pl
 	}
 
 	@Override
-	public Map<String, Version> provides() {
+	public Map<String, ModVersion> provides() {
 		return this.provides;
 	}
 
@@ -88,7 +88,7 @@ public sealed class MetadataImpl implements Metadata permits ModMetadataImpl, Pl
 		String id = json.get("id").asString().value();
 		String name = json.get("name").asString().value();
 		String versionString = json.get("version").asString().value();
-		Version version = Version.of(versionString);
+		ModVersion version = ModVersion.of(versionString);
 		String description = json.getOptional("description").map(value -> value.asString().value()).orElse("");
 
 		Map<String, String> credits = new LinkedHashMap<>();
@@ -96,9 +96,9 @@ public sealed class MetadataImpl implements Metadata permits ModMetadataImpl, Pl
 				value -> value.asObject().forEach((k, v) -> credits.put(k, v.asString().value()))
 		);
 
-		Map<String, Version> provides = new HashMap<>();
+		Map<String, ModVersion> provides = new HashMap<>();
 		json.getOptional("provides").ifPresent(
-				value -> value.asObject().forEach((k, v) -> provides.put(k, Version.of(v.asString().value())))
+				value -> value.asObject().forEach((k, v) -> provides.put(k, ModVersion.of(v.asString().value())))
 		);
 
 		Map<String, Dependency> dependencies = new HashMap<>();

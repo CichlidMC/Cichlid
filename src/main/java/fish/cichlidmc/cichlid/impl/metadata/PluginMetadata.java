@@ -3,7 +3,7 @@ package fish.cichlidmc.cichlid.impl.metadata;
 import fish.cichlidmc.cichlid.api.metadata.Metadata;
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.value.composite.JsonObject;
 
@@ -12,9 +12,9 @@ import java.util.Map;
 public final class PluginMetadata extends MetadataImpl {
 	public final String className;
 
-	public PluginMetadata(String id, String name, Version version, String description, Map<String, String> credits,
-						  Map<String, Version> provides, Map<String, Dependency> dependencies,
-						  Map<String, Incompatibility> incompatibilities, String className) {
+	public PluginMetadata(String id, String name, ModVersion version, String description, Map<String, String> credits,
+	                      Map<String, ModVersion> provides, Map<String, Dependency> dependencies,
+	                      Map<String, Incompatibility> incompatibilities, String className) {
 		super(id, name, version, description, credits, provides, dependencies, incompatibilities);
 		this.className = className;
 	}

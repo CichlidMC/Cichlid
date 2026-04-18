@@ -2,7 +2,8 @@ package fish.cichlidmc.cichlid.impl.metadata.component;
 
 import fish.cichlidmc.cichlid.api.metadata.component.Condition;
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
-import fish.cichlidmc.cichlid.api.version.VersionPredicate;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
+import fish.cichlidmc.cichlid.api.version.VersionPredicateSyntaxException;
 import fish.cichlidmc.cichlid.impl.metadata.component.condition.ConditionRegistry;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.value.composite.JsonObject;
@@ -10,16 +11,17 @@ import fish.cichlidmc.tinyjson.value.primitive.JsonString;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.function.Predicate;
 
 public class DependencyImpl implements Dependency {
 	private final String id;
 	private final String name;
-	private final VersionPredicate predicate;
+	private final Predicate<ModVersion> predicate;
 	@Nullable
 	private final String source;
 	private final Collection<Condition> conditions;
 
-	public DependencyImpl(String id, String name, VersionPredicate predicate, @Nullable String source, Collection<Condition> conditions) {
+	public DependencyImpl(String id, String name, Predicate<ModVersion> predicate, @Nullable String source, Collection<Condition> conditions) {
 		this.id = id;
 		this.name = name;
 		this.predicate = predicate;
@@ -38,7 +40,7 @@ public class DependencyImpl implements Dependency {
 	}
 
 	@Override
-	public VersionPredicate predicate() {
+	public Predicate<ModVersion> predicate() {
 		return this.predicate;
 	}
 
@@ -59,9 +61,9 @@ public class DependencyImpl implements Dependency {
 		String source = json.getOptional("source").map(value -> value.asString().value()).orElse(null);
 		Collection<Condition> conditions = ConditionRegistry.parse(json.get("conditions"));
 		try {
-			VersionPredicate parsed = VersionPredicate.parse(predicateJson.value());
+			Predicate<ModVersion> parsed = ModVersion.parsePredicate(predicateJson.value());
 			return new DependencyImpl(id, name, parsed, source, conditions);
-		} catch (VersionPredicate.SyntaxException e) {
+		} catch (VersionPredicateSyntaxException e) {
 			throw new JsonException(predicateJson, e.getMessage());
 		}
 	}

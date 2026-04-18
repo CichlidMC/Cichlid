@@ -1,8 +1,7 @@
 package fish.cichlidmc.cichlid.impl.loading.mod;
 
-import fish.cichlidmc.cichlid.api.Cichlid;
 import fish.cichlidmc.cichlid.api.plugin.ModFinder;
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.MinecraftVersion;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -40,7 +39,7 @@ public class ModFinderImpl implements ModFinder {
 
 	public Set<Path> find() throws IOException {
 		Set<Path> mods = new HashSet<>(this.files);
-		Version mcVersion = Cichlid.minecraftVersion();
+		MinecraftVersion mcVersion = MinecraftVersion.current();
 
 		for (Path directory : this.directories) {
 			Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {

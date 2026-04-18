@@ -1,15 +1,14 @@
 package fish.cichlidmc.cichlid.impl.version;
 
-import fish.cichlidmc.cichlid.api.version.Version;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.cichlid.impl.version.FlexVerComparator.VersionComponent;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public record VersionImpl(String string, List<VersionComponent> components) implements Version {
+public record ModVersionImpl(String string, List<VersionComponent> components) implements ModVersion {
 	@Override
-	public int compareTo(@NotNull Version o) {
-		return FlexVerComparator.compare(this.components, ((VersionImpl) o).components);
+	public int compareTo(ModVersion that) {
+		return FlexVerComparator.compare(this.components, ((ModVersionImpl) that).components);
 	}
 
 	@Override
@@ -19,7 +18,7 @@ public record VersionImpl(String string, List<VersionComponent> components) impl
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof VersionImpl that && this.string.equals(that.string);
+		return obj instanceof ModVersionImpl that && this.string.equals(that.string);
 	}
 
 	@Override
@@ -27,7 +26,7 @@ public record VersionImpl(String string, List<VersionComponent> components) impl
 		return this.string.hashCode();
 	}
 
-	public static Version of(String string) {
+	public static ModVersion of(String string) {
 		String trimmed = string.trim();
 
 		if (trimmed.isBlank()) {
@@ -35,6 +34,6 @@ public record VersionImpl(String string, List<VersionComponent> components) impl
 		}
 
 		List<VersionComponent> components = FlexVerComparator.decompose(trimmed);
-		return new VersionImpl(trimmed, components);
+		return new ModVersionImpl(trimmed, components);
 	}
 }

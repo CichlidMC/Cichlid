@@ -5,8 +5,7 @@ import fish.cichlidmc.cichlid.api.metadata.component.Condition;
 import fish.cichlidmc.cichlid.api.metadata.component.Dependency;
 import fish.cichlidmc.cichlid.api.metadata.component.Incompatibility;
 import fish.cichlidmc.cichlid.api.plugin.mod.LoadableMod;
-import fish.cichlidmc.cichlid.api.version.Version;
-import fish.cichlidmc.cichlid.api.version.VersionPredicate;
+import fish.cichlidmc.cichlid.api.version.ModVersion;
 import fish.cichlidmc.cichlid.impl.loading.plugin.LoadablePlugin;
 import fish.cichlidmc.cichlid.impl.loading.plugin.LoadedPlugin;
 import fish.cichlidmc.cichlid.impl.report.ProblemReport;
@@ -17,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 public final class DependencyChecker {
 	private final Map<String, TypedMetadata> metadata;
@@ -50,7 +50,7 @@ public final class DependencyChecker {
 			}
 
 			String depId = dependency.id();
-			VersionPredicate predicate = dependency.predicate();
+			Predicate<ModVersion> predicate = dependency.predicate();
 			Metadata required = this.get(depId);
 
 			if (required == null) {
@@ -69,7 +69,7 @@ public final class DependencyChecker {
 				continue;
 			}
 
-			Version version = required.version();
+			ModVersion version = required.version();
 
 			if (!predicate.test(version)) {
 				List<ReportDetail> details = Utils.mutableListOf(
@@ -101,8 +101,8 @@ public final class DependencyChecker {
 			if (incompatible == null)
 				continue;
 
-			VersionPredicate predicate = incompatibility.predicate();
-			Version version = incompatible.metadata.version();
+			Predicate<ModVersion> predicate = incompatibility.predicate();
+			ModVersion version = incompatible.metadata.version();
 
 			if (predicate.test(version)) {
 				report.addSection(
