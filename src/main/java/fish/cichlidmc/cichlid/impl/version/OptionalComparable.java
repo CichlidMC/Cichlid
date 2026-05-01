@@ -7,7 +7,7 @@ import java.util.OptionalInt;
 public interface OptionalComparable<T> {
 	OptionalInt compareTo(T that);
 
-	static <T> OptionalComparable<T> of(Comparable<T> comparator) {
-		return that -> OptionalInt.of(comparator.compareTo(that));
+	static <T> OptionalComparable<T> of(Comparable<T> comparable) {
+		return that -> OptionalInt.of(comparable.compareTo(that));
 	}
 }

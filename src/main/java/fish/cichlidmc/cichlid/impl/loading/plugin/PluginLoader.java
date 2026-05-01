@@ -17,7 +17,6 @@ import fish.cichlidmc.cichlid.impl.util.LoadedSetImpl;
 import fish.cichlidmc.tinyjson.JsonException;
 
 import java.io.IOException;
-import java.lang.instrument.Instrumentation;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,15 +38,15 @@ public class PluginLoader {
 		return new LoadedSetImpl<>(plugins);
 	}
 
-	public static Map<String, LoadedPlugin> load(Instrumentation instrumentation) {
+	public static Map<String, LoadedPlugin> load() {
 		try {
-			return doLoad(instrumentation);
+			return doLoad();
 		} catch (IOException e) {
 			throw new RuntimeException("IOException while loading plugins", e);
 		}
 	}
 
-	private static Map<String, LoadedPlugin> doLoad(Instrumentation instrumentation) throws IOException {
+	private static Map<String, LoadedPlugin> doLoad() throws IOException {
 		// find plugin files recursively
 		Set<Path> files = new HashSet<>();
 		FileUtils.walkFiles(CichlidPaths.PLUGINS, files::add);
@@ -101,7 +100,7 @@ public class PluginLoader {
 
 		// load the plugins
 		Map<String, LoadedPlugin> loaded = new HashMap<>();
-		loadable.forEach((id, plugin) -> plugin.load(instrumentation, report).ifPresent(loadedPlugin -> loaded.put(id, loadedPlugin)));
+		loadable.forEach((id, plugin) -> plugin.load(report).ifPresent(loadedPlugin -> loaded.put(id, loadedPlugin)));
 
 		report.throwIfNotEmpty();
 

@@ -1,6 +1,7 @@
 package fish.cichlidmc.cichlid.impl.loading.plugin;
 
 import fish.cichlidmc.cichlid.api.plugin.CichlidPlugin;
+import fish.cichlidmc.cichlid.impl.CichlidImpl;
 import fish.cichlidmc.cichlid.impl.loaded.PluginImpl;
 import fish.cichlidmc.cichlid.impl.metadata.PluginMetadata;
 import fish.cichlidmc.cichlid.impl.report.ProblemReport;
@@ -22,7 +23,7 @@ public abstract class LoadablePlugin {
 		this.source = source;
 	}
 
-	public abstract Optional<LoadedPlugin> load(Instrumentation instrumentation, ProblemReport report);
+	public abstract Optional<LoadedPlugin> load(ProblemReport report);
 
 	protected final Optional<LoadedPlugin> createFromClass(ProblemReport report) {
 		try {
@@ -59,7 +60,7 @@ public abstract class LoadablePlugin {
 		}
 
 		@Override
-		public Optional<LoadedPlugin> load(Instrumentation instrumentation, ProblemReport report) {
+		public Optional<LoadedPlugin> load(ProblemReport report) {
 			return Optional.of(this.loaded);
 		}
 	}
@@ -73,7 +74,8 @@ public abstract class LoadablePlugin {
 		}
 
 		@Override
-		public Optional<LoadedPlugin> load(Instrumentation instrumentation, ProblemReport report) {
+		public Optional<LoadedPlugin> load(ProblemReport report) {
+			Instrumentation instrumentation = CichlidImpl.INSTRUMENTATION.get();
 			instrumentation.appendToSystemClassLoaderSearch(this.jar);
 			return this.createFromClass(report);
 		}
@@ -85,7 +87,7 @@ public abstract class LoadablePlugin {
 		}
 
 		@Override
-		public Optional<LoadedPlugin> load(Instrumentation instrumentation, ProblemReport report) {
+		public Optional<LoadedPlugin> load(ProblemReport report) {
 			return this.createFromClass(report);
 		}
 	}

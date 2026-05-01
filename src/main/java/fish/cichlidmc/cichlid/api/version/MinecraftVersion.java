@@ -9,7 +9,13 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 /// A version of Minecraft.
+/// @see ModVersion
 public sealed interface MinecraftVersion {
+	/// A predicate matching any version of Minecraft.
+	/// Represented as a string with the value `any`.
+	/// @see ModVersion#ANY_PREDICATE
+	Predicate<MinecraftVersion> ANY_PREDICATE = parsePredicate("any");
+
 	/// @return the currently loaded version of Minecraft
 	static MinecraftVersion current() {
 		return CichlidImpl.MINECRAFT_VERSION.get();

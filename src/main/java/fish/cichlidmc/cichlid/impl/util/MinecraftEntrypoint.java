@@ -14,4 +14,9 @@ public enum MinecraftEntrypoint {
 		this.distribution = distribution;
 		this.className = className;
 	}
+
+	public boolean detect(ClassLoader loader) {
+		String resourcePath = this.className.replace('.', '/') + ".class";
+		return loader.getResource(resourcePath) != null;
+	}
 }

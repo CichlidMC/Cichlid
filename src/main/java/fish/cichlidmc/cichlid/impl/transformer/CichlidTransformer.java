@@ -18,7 +18,6 @@ import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.constant.ClassDesc;
 import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.Instrumentation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -148,8 +147,8 @@ public enum CichlidTransformer implements ClassFileTransformer {
 		}
 	}
 
-	public static void init(Instrumentation instrumentation) {
-		instrumentation.addTransformer(INSTANCE);
+	public static void init() {
+		CichlidImpl.INSTRUMENTATION.get().addTransformer(INSTANCE);
 
 		try {
 			FileUtils.deleteRecursively(EXPORT_ROOT);

@@ -6,6 +6,7 @@ import fish.cichlidmc.cichlid.api.metadata.Metadata;
 import fish.cichlidmc.cichlid.api.metadata.ModMetadata;
 import fish.cichlidmc.cichlid.api.plugin.mod.LoadableMod;
 import fish.cichlidmc.cichlid.api.plugin.mod.LoadedMod;
+import fish.cichlidmc.cichlid.impl.CichlidImpl;
 import fish.cichlidmc.cichlid.impl.loaded.ModImpl;
 import fish.cichlidmc.cichlid.impl.loading.ClasspathLoadableFinder;
 import fish.cichlidmc.cichlid.impl.loading.DependencyChecker;
@@ -28,17 +29,17 @@ import java.util.Objects;
 import java.util.Set;
 
 public class ModLoader {
-	public static LoadedSet<Mod> load(Map<String, LoadedPlugin> plugins, Instrumentation instrumentation) {
+	public static LoadedSet<Mod> load(Map<String, LoadedPlugin> plugins) {
 		try {
 			Map<String, Mod> map = new HashMap<>();
-			doLoad(plugins, map, instrumentation);
+			doLoad(plugins, map);
 			return new LoadedSetImpl<>(map);
 		} catch (IOException e) {
 			throw new RuntimeException("Exception occurred while loading mods", e);
 		}
 	}
 
-	private static void doLoad(Map<String, LoadedPlugin> plugins, Map<String, Mod> map, Instrumentation instrumentation) throws IOException {
+	private static void doLoad(Map<String, LoadedPlugin> plugins, Map<String, Mod> map) throws IOException {
 		Map<String, LoadableMod> loadableMods = new HashMap<>();
 		ProblemReport report = new ProblemReport();
 		ClasspathLoadableFinder.forMods().find(loadableMods, report);
@@ -112,7 +113,11 @@ public class ModLoader {
 				LoadedMod loaded = loadable.load();
 				LoadedPlugin plugin = Objects.requireNonNull(loaders.get(loadable), () -> "LoadableMod is missing its plugin: " + id);
 
-				loaded.jar().ifPresent(instrumentation::appendToSystemClassLoaderSearch);
+				loaded.jar().ifPresent(jar -> {
+					Instrumentation instrumentation = CichlidImpl.INSTRUMENTATION.get();
+					instrumentation.appendToSystemClassLoaderSearch(jar);
+				});
+
 				Mod mod = new ModImpl(loadable.metadata, plugin.representation, loaded.resources());
 				map.put(id, mod);
 			} catch (Throwable t) {

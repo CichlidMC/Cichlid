@@ -11,11 +11,7 @@ public final class ProblemReport {
 	private final List<ReportSection> sections;
 
 	public ProblemReport() {
-		this(new ArrayList<>());
-	}
-
-	public ProblemReport(List<ReportSection> sections) {
-		this.sections = sections;
+		this.sections = new ArrayList<>();
 	}
 
 	public void addSection(ReportSection section) {

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public final class ProblemReportTextRenderer {
-	public static final String SEPERATOR = "---------------------------------------------------\n";
+	public static final String SEPARATOR = "---------------------------------------------------\n";
 	public static final String DETAIL_DELIMITER = ": ";
 	public static final char NEWLINE = '\n';
 	public static final int MAX_LENGTH = 80;
@@ -20,20 +20,20 @@ public final class ProblemReportTextRenderer {
 		output.append(NEWLINE);
 
 		for (ReportSection section : report.sections()) {
-			output.append(SEPERATOR);
-			split(section.header, MAX_LENGTH).forEach(line -> output.append(line).append(NEWLINE));
+			output.append(SEPARATOR);
+			split(section.header(), MAX_LENGTH).forEach(line -> output.append(line).append(NEWLINE));
 
-			if (!section.details.isEmpty()) {
+			if (!section.details().isEmpty()) {
 				output.append(NEWLINE);
 				output.append("Details:").append(NEWLINE);
 
-				for (ReportDetail detail : section.details) {
-					String keySpacer = Utils.repeat(" ", detail.key.length() + DETAIL_DELIMITER.length());
-					int maxLength = detail.bypassLineLimit ? Integer.MAX_VALUE : MAX_LENGTH;
-					List<String> message = split(detail.message, maxLength);
+				for (ReportDetail detail : section.details()) {
+					String keySpacer = Utils.repeat(" ", detail.key().length() + DETAIL_DELIMITER.length());
+					int maxLength = detail.bypassLineLimit() ? Integer.MAX_VALUE : MAX_LENGTH;
+					List<String> message = split(detail.message(), maxLength);
 					for (int i = 0; i < message.size(); i++) {
 						if (i == 0) {
-							output.append(detail.key).append(DETAIL_DELIMITER);
+							output.append(detail.key()).append(DETAIL_DELIMITER);
 						} else {
 							output.append(keySpacer);
 						}
@@ -43,7 +43,7 @@ public final class ProblemReportTextRenderer {
 				}
 			}
 
-			output.append(SEPERATOR);
+			output.append(SEPARATOR);
 		}
 		return output.toString();
 	}
@@ -57,7 +57,7 @@ public final class ProblemReportTextRenderer {
 		String[] split = WHITESPACE.split(string);
 		StringBuilder builder = new StringBuilder(maxLineLength);
 		for (String word : split) {
-			if (builder.length() != 0 && builder.length() + word.length() > maxLineLength) {
+			if (!builder.isEmpty() && builder.length() + word.length() > maxLineLength) {
 				list.add(builder.toString().trim());
 				builder = new StringBuilder();
 			}

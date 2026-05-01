@@ -14,6 +14,7 @@ import fish.cichlidmc.cichlid.impl.util.Utils;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.TinyJson;
 import fish.cichlidmc.tinyjson.value.JsonValue;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +43,7 @@ public enum StandardJarPlugin implements CichlidPlugin {
 	public static final LoadedPlugin LOADED = LOADABLE.loaded;
 
 	@Override
+	@Nullable
 	public LoadableMod loadMod(Path path) {
 		if (!FileUtils.nameEndsWith(path, EXTENSION))
 			return null;

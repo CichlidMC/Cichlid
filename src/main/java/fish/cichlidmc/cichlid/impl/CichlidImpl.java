@@ -43,10 +43,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 
 public class CichlidImpl {
@@ -118,10 +116,10 @@ public class CichlidImpl {
 		logger.info("Bootstrapping...");
 		Sushi.bootstrap();
 		ConditionRegistry.bootstrap();
-		CichlidTransformer.init(instrumentation);
+		CichlidTransformer.init();
 
 		logger.info("Loading plugins...");
-		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load(instrumentation);
+		Map<String, LoadedPlugin> loadedPlugins = PluginLoader.load();
 		PLUGINS.set(PluginLoader.toLoadedSet(loadedPlugins));
 		logLoadedSet(Cichlid.plugins(), "plugin", Plugin::metadata);
 
@@ -130,7 +128,7 @@ public class CichlidImpl {
 		logger.space();
 
 		logger.info("Loading mods...");
-		MODS.set(ModLoader.load(loadedPlugins, instrumentation));
+		MODS.set(ModLoader.load(loadedPlugins));
 		logLoadedSet(Cichlid.mods(), "mod", Mod::metadata);
 
 		loadedPlugins.values().forEach(plugin -> plugin.impl.afterModsLoaded());
@@ -240,20 +238,11 @@ public class CichlidImpl {
 			return distribution;
 		}
 
-		Set<MinecraftEntrypoint> foundEntrypoints = EnumSet.noneOf(MinecraftEntrypoint.class);
-
-		for (MinecraftEntrypoint entrypoint : MinecraftEntrypoint.values()) {
-			String resourcePath = entrypoint.className.replace('.', '/') + ".class";
-			if (classLoader.getResource(resourcePath) != null) {
-				foundEntrypoints.add(entrypoint);
-			}
+		if (!MinecraftEntrypoint.SERVER_MAIN.detect(classLoader)) {
+			throw new IllegalStateException("Minecraft server main class is missing");
 		}
 
-		if (foundEntrypoints.size() == 1) {
-			return foundEntrypoints.iterator().next().distribution;
-		}
-
-		throw new IllegalStateException("The current distribution of Minecraft could not be automatically determined");
+		return MinecraftEntrypoint.CLIENT_MAIN.detect(classLoader) ? Distribution.CLIENT : Distribution.DEDICATED_SERVER;
 	}
 
 	private static MinecraftVersion detectMinecraftVersion() throws IOException {

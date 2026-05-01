@@ -12,7 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Set;
 
-public class ModFinderImpl implements ModFinder {
+public final class ModFinderImpl implements ModFinder {
 	public final Set<Path> files = new HashSet<>();
 	public final Set<Path> directories = new HashSet<>();
 
@@ -42,7 +42,7 @@ public class ModFinderImpl implements ModFinder {
 		MinecraftVersion mcVersion = MinecraftVersion.current();
 
 		for (Path directory : this.directories) {
-			Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+			Files.walkFileTree(directory, new SimpleFileVisitor<>() {
 				@Override
 				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
 					mods.add(file);

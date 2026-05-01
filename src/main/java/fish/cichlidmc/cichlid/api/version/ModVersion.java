@@ -10,7 +10,13 @@ import java.util.function.Predicate;
 ///
 /// This class implements [FlexVer](https://git.sleeping.town/unascribed/FlexVer)
 /// (specifically version 1.1.1), a SemVer-compatible version format.
+/// @see MinecraftVersion
 public sealed interface ModVersion extends Comparable<ModVersion> permits ModVersionImpl {
+	/// A predicate matching any version of a mod.
+	/// Represented as a string with the value `any`.
+	/// @see MinecraftVersion#ANY_PREDICATE
+	Predicate<ModVersion> ANY_PREDICATE = parsePredicate("any");
+
 	/// Compare this version to another. See FlexVer's README for details.
 	/// Comparing two versions of differing formats is valid, but probably won't make sense (garbage in, garbage out).
 	@Override

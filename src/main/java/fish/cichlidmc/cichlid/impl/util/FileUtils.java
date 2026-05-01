@@ -1,5 +1,7 @@
 package fish.cichlidmc.cichlid.impl.util;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -20,6 +22,7 @@ public class FileUtils {
 		return path.getFileName().toString().endsWith(suffix);
 	}
 
+	@Nullable
 	public static File toFileOrNull(Path path) {
 		try {
 			return path.toFile();
@@ -28,7 +31,6 @@ public class FileUtils {
 		}
 	}
 
-	@SuppressWarnings("RedundantCast") // it's not redundant, compilation fails without it
 	public static FileSystem openJar(Path path) throws IOException {
 		return FileSystems.newFileSystem(path, (ClassLoader) null);
 	}
