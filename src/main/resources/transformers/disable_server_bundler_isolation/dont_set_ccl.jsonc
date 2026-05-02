@@ -4,7 +4,7 @@
 
   "method": {
     "name": "run",
-    "desc": {
+    "descriptor": {
       "params": [ "java.lang.String[]" ],
       "return": "void"
     }
@@ -14,8 +14,8 @@
     "type": "invoke",
     "method": {
       "name": "setContextClassLoader",
-      "owner": "java.lang.Thread",
-      "desc": {
+      "class": "java.lang.Thread",
+      "descriptor": {
         "params": [ "java.lang.ClassLoader" ],
         "return": "void"
       }

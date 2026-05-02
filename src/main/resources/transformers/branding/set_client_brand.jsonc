@@ -4,7 +4,7 @@
 
   "method": {
     "name": "getClientModName",
-    "desc": {
+    "descriptor": {
       "params": [],
       "return": "java.lang.String"
     }

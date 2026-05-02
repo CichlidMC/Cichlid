@@ -1,23 +1,18 @@
 package fish.cichlidmc.test_mod;
 
+import java.lang.reflect.Method;
+import java.util.List;
+
 public final class TestModHooks {
-	public static void onMain() {
-		System.out.println("This method call was injected by Sushi!");
-	}
-
-	public void thing(String s) {
-		if (!"test".equals(s)) {
-			Object object = h(String.class);
-			if (object != null) {
-				s = object.toString();
-			}
+	public static List<Object> overrideSplashes(List<Object> original) {
+		try {
+			Class<?> splashManager = Class.forName("net.minecraft.client.resources.SplashManager");
+			Class<?> component = Class.forName("net.minecraft.network.chat.Component");
+			Method literalSplash = splashManager.getDeclaredMethod("literalSplash", String.class);
+			literalSplash.setAccessible(true);
+			return List.of(literalSplash.invoke(null, "Fish!"));
+		} catch (ReflectiveOperationException e) {
+			throw new RuntimeException(e);
 		}
-
-
-		System.out.println(s);
-	}
-
-	private static Object h(Object... os) {
-		return null;
 	}
 }

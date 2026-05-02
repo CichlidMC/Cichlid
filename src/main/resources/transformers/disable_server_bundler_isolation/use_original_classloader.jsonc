@@ -5,7 +5,7 @@
   "method": {
     // lambda$run$0(Ljava/lang/String;Ljava/net/URLClassLoader;[Ljava/lang/String;)V
     "name": "lambda$run$0",
-    "desc": {
+    "descriptor": {
       "params": [
         "java.lang.String",
         "java.net.URLClassLoader",

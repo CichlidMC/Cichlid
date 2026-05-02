@@ -1,0 +1,27 @@
+{
+  "type": "modify_expression",
+  "class": "net.minecraft.client.resources.SplashManager",
+
+  "method": {
+    "name": "apply",
+    // avoid targeting the synthetic bridge method generated due to generics
+    "descriptor": {
+      "params": [
+        "java.util.List",
+        "net.minecraft.server.packs.resources.ResourceManager",
+        "net.minecraft.util.profiling.ProfilerFiller"
+      ],
+      "return": "void"
+    }
+  },
+
+  "expression": {
+    "type": "invoke",
+    "method": "copyOf"
+  },
+
+  "hook": {
+    "class": "fish.cichlidmc.test_mod.TestModHooks",
+    "name": "overrideSplashes"
+  }
+}

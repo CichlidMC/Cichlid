@@ -1,7 +1,6 @@
 package fish.cichlidmc.cichlid.impl;
 
 import fish.cichlidmc.cichlid.api.Cichlid;
-import fish.cichlidmc.cichlid.api.CichlidPaths;
 import fish.cichlidmc.cichlid.api.dist.Distribution;
 import fish.cichlidmc.cichlid.api.loaded.LoadedSet;
 import fish.cichlidmc.cichlid.api.loaded.Mod;
@@ -23,9 +22,12 @@ import fish.cichlidmc.cichlid.impl.util.FileUtils;
 import fish.cichlidmc.cichlid.impl.util.MinecraftEntrypoint;
 import fish.cichlidmc.cichlid.impl.util.Utils;
 import fish.cichlidmc.fishflakes.api.value.Late;
+import fish.cichlidmc.fishflakes.api.value.Result;
 import fish.cichlidmc.sushi.api.Sushi;
 import fish.cichlidmc.sushi.api.TransformerManager;
 import fish.cichlidmc.sushi.api.registry.Id;
+import fish.cichlidmc.sushi.api.transformer.ConfiguredTransformer;
+import fish.cichlidmc.sushi.api.transformer.Transformer;
 import fish.cichlidmc.tinyjson.JsonException;
 import fish.cichlidmc.tinyjson.TinyJson;
 import fish.cichlidmc.tinyjson.value.JsonValue;
@@ -158,10 +160,6 @@ public class CichlidImpl {
 	private static void loadSushiTransformers(TransformerManager.Builder builder, Path cichlidResources) throws IOException {
 		BuiltInSushiTransformers.register(builder, cichlidResources);
 
-		Path output = CichlidPaths.CICHLID_ROOT.resolve(".sushi").resolve("output");
-		FileUtils.deleteRecursively(output);
-		Files.createDirectories(output);
-
 		for (Mod mod : Cichlid.mods()) {
 			if (mod.resources().isEmpty())
 				continue;
@@ -172,16 +170,17 @@ public class CichlidImpl {
 
 			FileUtils.walkFiles(transformers, file -> {
 				String path = transformers.relativize(file).toString();
-				if (!path.endsWith(".sushi"))
+				if (!path.endsWith(".jsonc"))
 					return;
 
-				String withoutExtension = path.substring(0, path.length() - ".sushi".length());
+				String withoutExtension = path.substring(0, path.length() - ".jsonc".length());
 				try {
 					Id id = new Id(mod.metadata().id(), withoutExtension);
 					JsonValue json = TinyJson.parse(file);
-					// builder.parseAndRegister(id, json).ifPresent(error -> {
-					// 	throw new RuntimeException("Failed to register Sushi transformer " + id + ": " + error);
-					// });
+					switch (Transformer.CODEC.decode(json)) {
+						case Result.Success(Transformer transformer) -> builder.defaultPhase().register(new ConfiguredTransformer(id, transformer));
+						case Result.Error(String message) -> throw new RuntimeException("Failed to parse Sushi transformer " + id + ": " + message);
+					}
 				} catch (Id.InvalidException e) {
 					throw new RuntimeException("Sushi transformer in mod " + mod.metadata().blame() + " has an invalid name", e);
 				}

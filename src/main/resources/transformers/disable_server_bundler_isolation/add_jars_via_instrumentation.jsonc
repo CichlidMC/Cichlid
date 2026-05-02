@@ -4,7 +4,7 @@
 
   "method": {
     "name": "run",
-    "desc": {
+    "descriptor": {
       "params": [ "java.lang.String[]" ],
       "return": "void"
     }
@@ -14,8 +14,8 @@
     "type": "invoke",
     "method": {
       "name": "toArray",
-      "owner": "java.util.List",
-      "desc": {
+      "class": "java.util.List",
+      "descriptor": {
         "params": [ "java.lang.Object[]" ],
         "return": "java.lang.Object[]"
       }
