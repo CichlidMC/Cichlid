@@ -1,8 +1,10 @@
 package fish.cichlidmc.cichlid.impl.loading.plugin.builtin;
 
 import fish.cichlidmc.cichlid.api.Cichlid;
+import fish.cichlidmc.cichlid.api.CichlidPaths;
 import fish.cichlidmc.cichlid.api.metadata.ModMetadata;
 import fish.cichlidmc.cichlid.api.plugin.CichlidPlugin;
+import fish.cichlidmc.cichlid.api.plugin.ModFinder;
 import fish.cichlidmc.cichlid.api.plugin.ModMetadataBuilder;
 import fish.cichlidmc.cichlid.api.plugin.mod.LoadableMod;
 import fish.cichlidmc.cichlid.api.plugin.mod.LoadedMod;
@@ -41,6 +43,11 @@ public enum StandardJarPlugin implements CichlidPlugin {
 
 	public static final LoadablePlugin.BuiltIn LOADABLE = new LoadablePlugin.BuiltIn(METADATA, INSTANCE);
 	public static final LoadedPlugin LOADED = LOADABLE.loaded;
+
+	@Override
+	public void locateMods(ModFinder finder) {
+		finder.addDirectory(CichlidPaths.MODS);
+	}
 
 	@Override
 	@Nullable
