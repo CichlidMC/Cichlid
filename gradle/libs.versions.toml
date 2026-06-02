@@ -1,5 +1,6 @@
 [versions]
 shadow = "9.4.0"
+javaagent-application = "0.12.2"
 
 jspecify = "1.0.0"
 jetbrains-annotations = "24.1.0"
@@ -31,3 +32,5 @@ junit = [ "junit-jupiter", "junit-launcher" ]
 
 [plugins]
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+# https://github.com/ryandens/javaagent-gradle-plugin
+javaagent-application = { id = "com.ryandens.javaagent-application", version.ref = "javaagent-application" }
