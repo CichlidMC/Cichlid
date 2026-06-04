@@ -31,7 +31,8 @@ public class CichlidAgent {
 
 	private static final List<Class<?>> criticalClasses = Utils.listOf(
 			CichlidLogger.class, CichlidTransformer.class, CatastropheLogger.class,
-			ProblemReport.class, ReportSection.class, ReportDetail.class, ReportedException.class
+			ProblemReport.class, ReportSection.class, ReportDetail.class, ReportedException.class,
+			ProblemReportTextRenderer.class
 	);
 
 	public static void premain(@Nullable String args, Instrumentation instrumentation) {
@@ -40,8 +41,12 @@ public class CichlidAgent {
 			preloadCriticalClasses();
 			CichlidImpl.load(args, instrumentation);
 		} catch (Throwable t) {
-			// in case of a rogue transformer breaking everything, stop transforming classes
-			CichlidTransformer.emergencyStop();
+			try {
+				// in case of a rogue transformer breaking everything, stop transforming classes
+				CichlidTransformer.emergencyStop();
+			} catch (Throwable t2) {
+				t.addSuppressed(t2);
+			}
 
 			try {
 				handleError(t);
